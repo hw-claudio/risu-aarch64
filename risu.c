@@ -85,46 +85,83 @@ int master_connect(uint16_t port)
    return nsock;
 }
 
-int send_stop_test(int sock)
+/* The communication protocol is very simple.
+ * The apprentice sends a packet like this:
+ *  4 bytes: faulting insn
+ *  n bytes: register dump
+ * The master replies with a single byte response:
+ *  0: ok, continue  [registers matched]
+ *  1: exit with status 0 [end of test]
+ *  2: exit with status 1 [mismatch, fail]
+ */
+
+int send_data_pkt(int sock, void *pkt, int pktlen)
 {
-    const char *stopme = "S";
-    char resp;
-    write(sock, stopme, 1);
-    read(sock, &resp, 1);
-    return resp;
+   unsigned char resp;
+   char *p = pkt;
+   while (pktlen)
+   {
+      int i = write(sock, p, pktlen);
+      if (i <= 0)
+      {
+         perror("write failed");
+         exit(1);
+      }
+      pktlen -= i;
+      p += i;
+   }
+   if (read(sock, &resp, 1) != 1)
+   {
+      perror("read failed");
+      exit(1);
+   }
+   return resp;
 }
 
-int read_cmd_byte(int sock)
+void recv_data_pkt(int sock, void *pkt, int pktlen)
 {
-    char cmd;
-    read(sock, &cmd, 1);
-    return cmd;
+   /* We always read a fixed length packet */ 
+   char *p = pkt;
+   while (pktlen)
+   {
+      int i = read(sock, p, pktlen);
+      if (i <= 0)
+      {
+         perror("read failed");
+         exit(1);
+      }
+      pktlen -= i;
+      p += i;
+   }
 }
 
 void send_response_byte(int sock, int resp)
 {
-    char r = resp;
-    write(sock, &r, 1);
+   unsigned char r = resp;
+   if (write(sock, &r, 1) != 1)
+   {
+      perror("write failed");
+      exit(1);
+   }   
 }
-
 
 int master(int sock)
 {
-    printf("master waiting for data\n");
-    int cmd = read_cmd_byte(sock);
-    printf("Got cmd %c, sending resp 0\n", cmd);
-    send_response_byte(sock, 0);
-    printf("Exiting.\n");
-    return 0;
-    
+   printf("master waiting for data\n");
+   unsigned char cmd;
+   recv_data_pkt(sock, &cmd, 1);
+   printf("Got cmd %c, sending resp 0\n", cmd);
+   send_response_byte(sock, 0);
+   printf("Exiting.\n");
+   return 0;
 }
 
 int apprentice(int sock)
 {
-    printf("requesting stop\n");
-    int resp = send_stop_test(sock);
-    printf("got response %d\n", resp);
-    return resp;
+   printf("requesting stop\n");
+   int resp = send_data_pkt(sock, "S", 1);
+   printf("got response %d\n", resp);
+   return resp;
 }
 
 
