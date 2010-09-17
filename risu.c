@@ -169,8 +169,9 @@ int ismaster;
 
 int main(int argc, char **argv)
 {
-   uint16_t port = 0;
-   char *hostname = 0;
+   // some handy defaults to make testing easier
+   uint16_t port = 9191;
+   char *hostname = "localhost";
    int sock;
    
 
