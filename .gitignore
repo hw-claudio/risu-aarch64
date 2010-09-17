@@ -1,0 +1,4 @@
+# Ignore binaries and any lurking coredumps
+*.o
+risu
+core
