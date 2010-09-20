@@ -1,4 +1,7 @@
-/* Random Instruction Sequences for Userspace */
+/* Random Instruction Sequences for Userspace 
+ * Copyright 2010 Linaro Limited
+ * TODO: license
+ */
 
 #include <unistd.h>
 #include <stdio.h>
@@ -8,8 +11,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <signal.h>
+#include <ucontext.h>
 #include <getopt.h>
+#include <setjmp.h>
+#include <assert.h>
 
+#include "risu.h"
 
 int apprentice_connect(const char *hostname, uint16_t port)
 {
@@ -93,6 +101,11 @@ int master_connect(uint16_t port)
  *  0: ok, continue  [registers matched]
  *  1: exit with status 0 [end of test]
  *  2: exit with status 1 [mismatch, fail]
+ *
+ * We can handle the variable-length packet at setup
+ * (where the apprentice sends command line options,
+ * random seed etc) by first sending the length alone
+ * as a 4-byte packet, and then a packet of that length.
  */
 
 int send_data_pkt(int sock, void *pkt, int pktlen)
@@ -145,25 +158,77 @@ void send_response_byte(int sock, int resp)
    }   
 }
 
+typedef void sighandler_fn_t(int sig, siginfo_t *si, void *vuc);
+
+sighandler_fn_t master_sigill, apprentice_sigill;
+
+int apprentice_socket, master_socket;
+
+sigjmp_buf jmpbuf;
+
+void master_sigill(int sig, siginfo_t *si, void *uc)
+{
+   switch (recv_and_compare_register_info(master_socket, uc))
+   {
+      case 0:
+         /* match OK */
+         return;
+      default:
+         /* mismatch, or end of test */
+         siglongjmp(jmpbuf, 1);
+   }
+}
+
+void apprentice_sigill(int sig, siginfo_t *si, void *uc)
+{
+   switch (send_register_info(apprentice_socket, uc))
+   {
+      case 0:
+         /* match OK */
+         return;
+      case 1:
+         /* end of test */
+         exit(0);
+      default:
+         /* mismatch */
+         exit(1);
+   }
+}
+
+static void set_sigill_handler(sighandler_fn_t *fn)
+{
+   struct sigaction sa;
+   sa.sa_sigaction = fn;
+   sa.sa_flags = SA_SIGINFO;
+   sigemptyset(&sa.sa_mask);
+   if (sigaction(SIGILL, &sa, 0) != 0)
+   {
+      perror("sigaction");
+      exit(1);
+   }
+}
+
 int master(int sock)
 {
-   printf("master waiting for data\n");
-   unsigned char cmd;
-   recv_data_pkt(sock, &cmd, 1);
-   printf("Got cmd %c, sending resp 0\n", cmd);
-   send_response_byte(sock, 0);
-   printf("Exiting.\n");
-   return 0;
+   if (sigsetjmp(jmpbuf, 1))
+   {
+      return report_match_status();
+   }
+   master_socket = sock;
+   set_sigill_handler(master_sigill);
+   fprintf(stderr, "raising SIGILL\n");
+   raise(SIGILL);
+   assert(!"should never get here");
 }
 
 int apprentice(int sock)
 {
-   printf("requesting stop\n");
-   int resp = send_data_pkt(sock, "S", 1);
-   printf("got response %d\n", resp);
-   return resp;
+   apprentice_socket = sock;
+   set_sigill_handler(apprentice_sigill);
+   fprintf(stderr, "raising SIGILL\n");
+   raise(SIGILL);
+   assert(!"should never get here");
 }
-
 
 int ismaster;
 
@@ -220,15 +285,16 @@ int main(int argc, char **argv)
             abort();
       }
    }
+
    if (ismaster)
    {
-      printf("master port %d\n", port);
+      fprintf(stderr, "master port %d\n", port);
       sock = master_connect(port);
       return master(sock);
    }
    else
    {
-      printf("apprentice host %s port %d\n", hostname, port);
+      fprintf(stderr, "apprentice host %s port %d\n", hostname, port);
       sock = apprentice_connect(hostname, port);
       return apprentice(sock);
    }
