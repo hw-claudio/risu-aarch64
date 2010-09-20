@@ -2,7 +2,7 @@
 ARCH=$(shell dpkg-architecture -qDEB_HOST_ARCH_CPU)
 
 PROG=risu
-SRCS=risu.c risu_$(ARCH).c
+SRCS=risu.c comms.c risu_$(ARCH).c
 HDRS=risu.h
 OBJS=$(SRCS:.c=.o)
 
