@@ -16,14 +16,17 @@ struct reginfo
       gregset_t gregs;
 };
 
-#ifndef REG_ESP
+#ifndef REG_GS
+/* Assume that either we get all these defines or none */
+#define REG_GS 0
+#define REG_FS 1
+#define REG_ES 2
+#define REG_DS 3
 #define REG_ESP 7
-#endif
-#ifndef REG_UESP
-#define REG_UESP 17
-#endif
-#ifndef REG_EIP
+#define REG_TRAPNO 12
 #define REG_EIP 14
+#define REG_EFL 16
+#define REG_UESP 17
 #endif
 
 struct reginfo master_ri, apprentice_ri;
@@ -52,7 +55,18 @@ static void fill_reginfo(struct reginfo *ri, ucontext_t *uc)
       {
          case REG_ESP:
          case REG_UESP:
-            /* Don't store these registers as it results in mismatches. */
+         case REG_GS:
+         case REG_FS:
+         case REG_ES:
+         case REG_DS:
+         case REG_TRAPNO:
+         case REG_EFL:
+            /* Don't store these registers as it results in mismatches.
+             * In particular valgrind has different values for some
+             * segment registers, and they're boring anyway.
+             * We really shouldn't be ignoring EFL but valgrind doesn't
+             * seem to set it right and I don't care to investigate.
+             */
             ri->gregs[i] = 0xDEADBEEF;
             break;
          case REG_EIP:
