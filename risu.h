@@ -12,7 +12,7 @@ int send_data_pkt(int sock, void *pkt, int pktlen);
 void recv_data_pkt(int sock, void *pkt, int pktlen);
 void send_response_byte(int sock, int resp);
 
-
+extern uint32_t image_start_address;
 
 /* Interface provided by CPU-specific code: */
 
@@ -35,5 +35,9 @@ int recv_and_compare_register_info(int sock, void *uc);
  * and 1 for a mismatch.
  */
 int report_match_status(void);
+
+/* Move the PC past this faulting insn by adjusting ucontext
+ */
+void advance_pc(void *uc);
 
 #endif /* RISU_H */

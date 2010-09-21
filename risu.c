@@ -12,6 +12,9 @@
 #include <getopt.h>
 #include <setjmp.h>
 #include <assert.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 #include "risu.h"
 
@@ -29,6 +32,7 @@ void master_sigill(int sig, siginfo_t *si, void *uc)
    {
       case 0:
          /* match OK */
+         advance_pc(uc);
          return;
       default:
          /* mismatch, or end of test */
@@ -42,6 +46,7 @@ void apprentice_sigill(int sig, siginfo_t *si, void *uc)
    {
       case 0:
          /* match OK */
+         advance_pc(uc);
          return;
       case 1:
          /* end of test */
@@ -65,6 +70,41 @@ static void set_sigill_handler(sighandler_fn_t *fn)
    }
 }
 
+typedef void entrypoint_fn(void);
+
+uint32_t image_start_address;
+entrypoint_fn *image_start;
+
+void load_image(const char *imgfile)
+{
+   /* Load image file into memory as executable */
+   struct stat st;
+   fprintf(stderr, "loading test image %s...\n", imgfile);
+   int fd = open(imgfile, O_RDONLY);
+   if (fd < 0)
+   {
+      fprintf(stderr, "failed to open image file %s\n", imgfile);
+      exit(1);
+   }
+   if (fstat(fd, &st) != 0)
+   {
+      perror("fstat");
+      exit(1);
+   }
+   size_t len = st.st_size;
+   void *addr;
+   
+   addr = mmap(0, len, PROT_READ|PROT_EXEC, MAP_SHARED, fd, 0);
+   if (!addr)
+   {
+      perror("mmap");
+      exit(1);
+   }
+   close(fd);
+   image_start = addr;
+   image_start_address = (uint32_t)addr;
+}
+
 int master(int sock)
 {
    if (sigsetjmp(jmpbuf, 1))
@@ -73,18 +113,20 @@ int master(int sock)
    }
    master_socket = sock;
    set_sigill_handler(master_sigill);
-   fprintf(stderr, "raising SIGILL\n");
-   raise(SIGILL);
-   assert(!"should never get here");
+   fprintf(stderr, "starting image\n");
+   image_start();
+   fprintf(stderr, "image returned unexpectedly\n");
+   exit(1);
 }
 
 int apprentice(int sock)
 {
    apprentice_socket = sock;
    set_sigill_handler(apprentice_sigill);
-   fprintf(stderr, "raising SIGILL\n");
-   raise(SIGILL);
-   assert(!"should never get here");
+   fprintf(stderr, "starting image\n");
+   image_start();
+   fprintf(stderr, "image returned unexpectedly\n");
+   exit(1);
 }
 
 int ismaster;
@@ -94,8 +136,8 @@ int main(int argc, char **argv)
    // some handy defaults to make testing easier
    uint16_t port = 9191;
    char *hostname = "localhost";
+   char *imgfile;
    int sock;
-   
 
    // TODO clean this up later
    
@@ -143,6 +185,15 @@ int main(int argc, char **argv)
       }
    }
 
+   imgfile = argv[optind];
+   if (!imgfile)
+   {
+      fprintf(stderr, "must specify image file name\n");
+      exit(1);
+   }
+
+   load_image(imgfile);
+   
    if (ismaster)
    {
       fprintf(stderr, "master port %d\n", port);

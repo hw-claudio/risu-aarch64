@@ -1,4 +1,5 @@
 # Ignore binaries and any lurking coredumps
 *.o
+*.bin
 risu
 core

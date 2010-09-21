@@ -12,18 +12,62 @@
  */
 struct reginfo
 {
+      uint32_t faulting_insn;
       gregset_t gregs;
 };
 
+#ifndef REG_ESP
+#define REG_ESP 7
+#endif
+#ifndef REG_UESP
+#define REG_UESP 17
+#endif
+#ifndef REG_EIP
+#define REG_EIP 14
+#endif
+
 struct reginfo master_ri, apprentice_ri;
+
+static int insn_is_ud2(uint32_t insn)
+{
+   return ((insn & 0xffff) == 0x0b0f);
+}
+
+void advance_pc(void *vuc)
+{
+   /* We assume that this is either UD1 or UD2.
+    * This would need tweaking if we want to test
+    * expected undefs on x86.
+    */
+   ucontext_t *uc = vuc;
+   uc->uc_mcontext.gregs[REG_EIP] += 2;
+}
 
 static void fill_reginfo(struct reginfo *ri, ucontext_t *uc)
 {
    int i;
    for (i = 0; i < NGREG; i++)
    {
-      ri->gregs[i] = uc->uc_mcontext.gregs[i];
+      switch(i)
+      {
+         case REG_ESP:
+         case REG_UESP:
+            /* Don't store these registers as it results in mismatches. */
+            ri->gregs[i] = 0xDEADBEEF;
+            break;
+         case REG_EIP:
+            /* Store the offset from the start of the test image */
+            ri->gregs[i] = uc->uc_mcontext.gregs[i] - image_start_address;
+            break;
+         default:
+            ri->gregs[i] = uc->uc_mcontext.gregs[i];
+            break;
+      }
    }
+   /* x86 insns aren't 32 bit but we're not really testing x86 so
+    * this is just to distinguish 'do compare' from 'stop'
+    */
+   ri->faulting_insn = *((uint32_t*)uc->uc_mcontext.gregs[REG_EIP]);
 }
 
 
@@ -40,9 +84,24 @@ int send_register_info(int sock, void *uc)
  */
 int recv_and_compare_register_info(int sock, void *uc)
 {
+   int resp;
    fill_reginfo(&master_ri, uc);
    recv_data_pkt(sock, &apprentice_ri, sizeof(apprentice_ri));
-   int resp = 1;
+   if (memcmp(&master_ri, &apprentice_ri, sizeof(master_ri)) != 0)
+   {
+      /* mismatch */
+      resp = 2;
+   }
+   else if (insn_is_ud2(master_ri.faulting_insn))
+   {
+      /* end of test */
+      resp = 1;
+   }
+   else
+   {
+      /* either successful match or expected undef */
+      resp = 0;
+   }
    send_response_byte(sock, resp);
    return resp;
 }
@@ -57,6 +116,7 @@ static char *regname[] =
 static void dump_reginfo(struct reginfo *ri)
 {
    int i;
+   fprintf(stderr, "  faulting insn %x\n", ri->faulting_insn);
    for (i = 0; i < NGREG; i++)
    {
       fprintf(stderr, "  %s: %x\n", regname[i] ? regname[i] : "???", ri->gregs[i]);
