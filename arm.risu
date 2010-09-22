@@ -13,7 +13,7 @@
 
 # As an initial starter, one instruction valgrind knows about:
 
-ADD A1 c:4 0000 100 s rn:4 rd:4 imm:5 type:2 0 rm:4
+ADD A1 cond:4 0000 100 s rn:4 rd:4 imm:5 type:2 0 rm:4
 
 # and one it doesn't:
-RBIT A1 c:4 0110 1111 1111 rd:4 1111 0011 rm:4
+RBIT A1 cond:4 0110 1111 1111 rd:4 1111 0011 rm:4

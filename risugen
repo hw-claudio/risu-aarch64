@@ -84,11 +84,49 @@ sub dump_insn_details($@)
     print "\n";
 }
 
-sub write_test_code()
+sub gen_one_insn($@)
 {
-    # let's just dump the data structure for the moment
+    # Given an instruction-details array, generate an instruction
+    INSN: while(1) {
+        my ($forcecond, @arr) = @_;
+        my $insn = int(rand(0xffffffff));
+        my $fixedbits = shift @arr;
+        my $fixedbitmask = shift @arr;
+
+        $insn &= ~$fixedbitmask;
+        $insn |= $fixedbits;
+        for my $k (0 .. @arr /3 - 1) {
+            my ($var, $pos, $mask) = ($arr[3*$k], $arr[3*$k+1],$arr[3*$k+2]);
+            my $val = ($insn >> $pos) & $mask;
+            # Check constraints here:
+            # not allowed to use or modify sp or pc
+            next INSN if ($var =~ /^r/ && (($val == 13) || ($val == 15)));
+            # Some very arm-specific code to force the condition field
+            # to 'always' if requested.
+            if ($forcecond) {
+                if ($var eq "cond") {
+                    $insn &= ~ ($mask << $pos);
+                    $insn |= (0xe << $pos);
+                }
+            }
+        }
+        # OK, we got a good one
+        insn32($insn);
+        return;
+    }
+}
+
+sub write_test_code($)
+{
+    my $condprob = @_;
+
+    # TODO better random number generator?
+    srand(0);
+
     for my $insn_enc (keys %insn_details) {
-        dump_insn_details($insn_enc, @{$insn_details{$insn_enc}});
+        #dump_insn_details($insn_enc, @{$insn_details{$insn_enc}});
+        my $forcecond = (rand() < $condprob) ? 1 : 0;
+        gen_one_insn($forcecond, @{$insn_details{$insn_enc}});
     }
 }
 
@@ -189,12 +227,13 @@ sub main()
     }
     my $infile = $ARGV[0];
     my $outfile = $ARGV[1];
-
+    my $condprob = 1; # probability of making an insn conditional
+    
     parse_config_file($infile);
     
     open_bin($outfile);
     write_arm_prologue();
-    write_test_code();
+    write_test_code($condprob);
     write_test_end();
     close_bin();
     return 0;
