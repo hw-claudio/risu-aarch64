@@ -94,7 +94,7 @@ void load_image(const char *imgfile)
    size_t len = st.st_size;
    void *addr;
    
-   addr = mmap(0, len, PROT_READ|PROT_EXEC, MAP_SHARED, fd, 0);
+   addr = mmap(0, len, PROT_READ|PROT_EXEC, MAP_PRIVATE, fd, 0);
    if (!addr)
    {
       perror("mmap");
