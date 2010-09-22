@@ -1,0 +1,19 @@
+# Input file for risugen defining ARM instructions
+# Copyright 2010 Linaro Limited
+
+# The format here is:
+# insnname encodingname bitfield ...
+# (and we'll have a trailing bit for specifying constraints later)
+# where each bitfield is either:
+#  var:sz  specifying a variable field of size sz (sz == 0 if :sz omitted)
+#  [01]*   specifying fixed bits
+# Field names beginning 'r' are special as they are assumed to be general
+# purpose registers. They get an automatic "cannot be 13 or 15" (sp/pc)
+# constraint.
+
+# As an initial starter, one instruction valgrind knows about:
+
+ADD A1 c:4 0000 100 s rn:4 rd:4 imm:5 type:2 0 rm:4
+
+# and one it doesn't:
+RBIT A1 c:4 0110 1111 1111 rd:4 1111 0011 rm:4

@@ -7,6 +7,8 @@
 
 use strict;
 
+my @insns;
+my %insn_details;
 
 sub open_bin
 {
@@ -67,18 +69,126 @@ sub write_arm_prologue()
     write_compare();
 }
 
+sub write_test_code()
+{
+    # let's just dump the data structure for the moment
+    for my $insn_enc (keys %insn_details) {
+        print "insn ${insn_enc}: ";
+        my $arr = $insn_details{$insn_enc};
+        my $fixedbits = @$arr[0];
+        my $fixedbitmask = @$arr[1];
+        print sprintf(" fixedbits %08x mask %08x ", $fixedbits, $fixedbitmask);
+        for my $k (0 .. (@$arr - 2) /3 - 1) {
+            my ($var, $pos, $mask) = ($$arr[3*$k+2], $$arr[3*$k+3],$$arr[3*$k+4]);
+            print "($var, $pos, " . sprintf("%08x", $mask) . ") ";
+        }
+        print "\n";
+    }
+}
+
+sub parse_config_file($)
+{
+    # Read in the config file defining the instructions we can generate
+    my ($file) = @_;
+    # The format here is:
+    # insnname encodingname bitfield ...
+    # (and we'll have a trailing bit for specifying constraints later)
+    # where each bitfield is either:
+    #  var:sz  specifying a variable field of size sz (sz == 0 if :sz omitted)
+    #  [01]*   specifying fixed bits
+    # Field names beginning 'r' are special as they are assumed to be general
+    # purpose registers. They get an automatic "cannot be 13 or 15" (sp/pc)
+    # constraint.
+
+    # Our data structure here is fairly simple:
+    # an assoc array %insn_details whose keys are "insn_enc" strings
+    # and whose values are array references. Each array is, in order:
+    #  fixedbits, fixedbitmask, var,bitpos,mask , var,bitpos,mask ...
+
+    open(CFILE, $file) or die "can't open $file: $!";
+    while (<CFILE>)
+    {
+        next if /^\s*#/;
+        next if /^\s*$/;
+        my ($insn, $enc, @bits) = split;
+        if (!defined $enc) {
+            print STDERR "$file:$.: no insn or encoding?\n";
+            exit(1);
+        }
+        my $insnname = "${insn}_${enc}";
+        if (exists $insn_details{$insnname}) {
+            print STDERR "$file:$.: redefinition of $insnname\n";
+            exit(1);
+        }
+
+        my $fixedbits = 0;
+        my $fixedbitmask = 0;
+        my $bitpos = 32;
+        foreach my $bit (@bits) {
+            my $bitlen;
+            my $bitval;
+            my $var;
+            if ($bit =~ /^[01]*$/) {
+                # fixed bits
+                $bitlen = length($bit);
+                $bitval = oct("0b".$bit);
+            } elsif ($bit =~ /^([a-zA-Z]+):([0-9]+)$/) {
+                # variable field
+                $var = $1;
+                $bitlen = $2;
+            } elsif($bit =~ /^([a-zA-Z]+)$/) {
+                # single bit variable field
+                $var = $1;
+                $bitlen = 1;
+            } else {
+                print STDERR "$file:$.: unrecognised bitfield specifier $bit\n";
+                exit(1);
+            }
+
+            my $bitmask = oct("0b". '1' x $bitlen);
+            $bitpos -= $bitlen;
+            if ($bitpos < 0) {
+                print STDERR "$file:$.: too many bits specified\n";
+                exit(1);
+            }
+
+            if (defined $bitval) {
+                $fixedbits |= ($bitval << $bitpos);
+                $fixedbitmask |= ($bitmask << $bitpos);
+            } else {
+                push @{$insn_details{$insnname}}, $var, $bitpos, $bitmask;
+            }
+        }
+        if ($bitpos != 0) {
+            print STDERR "$file:$.: not enough bits specified\n";
+            exit(1);
+        }
+        if ((($fixedbits & $fixedbitmask) != $fixedbits)
+            || (($fixedbits & ~$fixedbitmask) != 0)) {
+            die "internal error: fixed bits not lined up with mask";
+        }
+        #  Stick the fixedbit info on the front of the array now we know it
+        unshift @{$insn_details{$insnname}}, $fixedbits, $fixedbitmask;
+    }
+    close(CFILE) or die "can't close $file: $!";
+}
+
+
 sub main()
 {
     my $fname;
-    if ($#ARGV != 0) {
-        print STDERR "Usage: risugen outputfile\n";
+    if ($#ARGV != 1) {
+        print STDERR "Usage: risugen inputfile outputfile\n";
         return 1;
     }
-    $fname = $ARGV[0];
+    my $infile = $ARGV[0];
+    my $outfile = $ARGV[1];
+
+    parse_config_file($infile);
     
-    open_bin($fname);
+    open_bin($outfile);
     write_arm_prologue();
-    # Add magic here
+    write_test_code();
     write_test_end();
     close_bin();
     return 0;
