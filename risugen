@@ -1,0 +1,87 @@
+#!/usr/bin/perl -w
+#
+# risugen -- generate a test binary file for use with risu
+# Copyright 2010 Linaro Limited.
+
+# Usage: risugen outputfile
+
+use strict;
+
+
+sub open_bin
+{
+    my ($fname) = @_;
+    open(BIN, ">", $fname) or die "can't open %fname: $!";
+}
+
+sub close_bin
+{
+    close(BIN) or die "can't close output file: $!";
+}
+
+sub insn32($)
+{
+    my ($insn) = @_;
+    print BIN pack("V", $insn);
+}
+
+# The space 0xE7F___F_ is guaranteed to always UNDEF
+# and not to be allocated for insns in future architecture
+# revisions. So we use it for our 'do comparison' and
+# 'end of test' instructions.
+# We fill in the middle bit with a randomly selected
+# 'e5a' just in case the space is being used by somebody
+# else too.
+
+sub write_test_end()
+{
+    insn32(0xe7fe5af1);
+}
+
+sub write_compare()
+{
+    insn32(0xe7fe5af0);
+}
+
+sub write_arm_prologue()
+{
+    # We will start in ARM mode because we're just loaded
+    # as binary and jump to the aligned start of it, so
+    # the target address LSB is always 0.
+    
+    # initialise all registers
+    # add r0, pc, #4
+    insn32(0xe28f0004);
+    # ldmia r0, {r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r14}
+    insn32(0xe8905fff);
+    # b next
+    insn32(0xea00000d);
+    #  .word [14 words of data for r0..r12,r14]
+    insn32(0x1234567); insn32(0x37346434); insn32(0x68124126); insn32(0x34716483);
+    insn32(0x7917464); insn32(0xabcedef0); insn32(0xab8e83ba); insn32(0x734ba84a);
+    insn32(0x7a923ba); insn32(0x841b823a); insn32(0xb1024ab2); insn32(0x87346141);
+    insn32(0x7416231); insn32(0x97857623);
+    # next:
+    # FIXME clear the flags
+
+    write_compare();
+}
+
+sub main()
+{
+    my $fname;
+    if ($#ARGV != 0) {
+        print STDERR "Usage: risugen outputfile\n";
+        return 1;
+    }
+    $fname = $ARGV[0];
+    
+    open_bin($fname);
+    write_arm_prologue();
+    # Add magic here
+    write_test_end();
+    close_bin();
+    return 0;
+}
+
+exit(main);
