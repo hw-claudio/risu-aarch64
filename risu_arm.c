@@ -49,7 +49,11 @@ static void fill_reginfo(struct reginfo *ri, ucontext_t *uc)
    ri->gpreg[14] = uc->uc_mcontext.arm_lr;
    ri->gpreg[13] = 0xdeadbeef;
    ri->gpreg[15] = uc->uc_mcontext.arm_pc - image_start_address;
-   ri->cpsr = uc->uc_mcontext.arm_cpsr;
+   // Mask out everything except NZCVQ GE
+   // In theory we should be OK to compare everything
+   // except the reserved bits, but valgrind for one
+   // doesn't fill in enough fields yet.
+   ri->cpsr = uc->uc_mcontext.arm_cpsr & 0xF80F0000;
 
    // TODO thumb mode?
    ri->faulting_insn = *((uint32_t*)uc->uc_mcontext.arm_pc);

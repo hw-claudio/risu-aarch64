@@ -62,8 +62,8 @@ sub write_arm_prologue()
     insn32(0x7a923ba); insn32(0x841b823a); insn32(0xb1024ab2); insn32(0x87346141);
     insn32(0x7416231); insn32(0x97857623);
     # next:
-    # FIXME clear the flags
-
+    # clear the flags (NZCVQ and GE): msr APSR_nzcvqg, #0
+    insn32(0xe32cf000);
     write_compare();
 }
 
