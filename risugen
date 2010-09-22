@@ -69,20 +69,26 @@ sub write_arm_prologue()
     write_compare();
 }
 
+sub dump_insn_details($@)
+{
+    # Dump the instruction details for one insn
+    my ($insn, @arr) = @_;
+    print "insn $insn: ";
+    my $fixedbits = shift @arr;
+    my $fixedbitmask = shift @arr;
+    print sprintf(" fixedbits %08x mask %08x ", $fixedbits, $fixedbitmask);
+    for my $k (0 .. @arr /3 - 1) {
+        my ($var, $pos, $mask) = ($arr[3*$k], $arr[3*$k+1],$arr[3*$k+2]);
+        print "($var, $pos, " . sprintf("%08x", $mask) . ") ";
+    }
+    print "\n";
+}
+
 sub write_test_code()
 {
     # let's just dump the data structure for the moment
     for my $insn_enc (keys %insn_details) {
-        print "insn ${insn_enc}: ";
-        my $arr = $insn_details{$insn_enc};
-        my $fixedbits = @$arr[0];
-        my $fixedbitmask = @$arr[1];
-        print sprintf(" fixedbits %08x mask %08x ", $fixedbits, $fixedbitmask);
-        for my $k (0 .. (@$arr - 2) /3 - 1) {
-            my ($var, $pos, $mask) = ($$arr[3*$k+2], $$arr[3*$k+3],$$arr[3*$k+4]);
-            print "($var, $pos, " . sprintf("%08x", $mask) . ") ";
-        }
-        print "\n";
+        dump_insn_details($insn_enc, @{$insn_details{$insn_enc}});
     }
 }
 
