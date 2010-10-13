@@ -11,5 +11,12 @@
 # purpose registers. They get an automatic "cannot be 13 or 15" (sp/pc)
 # constraint.
 
-ADD T1 000 1100 rm:3 rn:3 rd:3
-ADD T3 11101 01 1000 s rn:4 0 imma:3 rd:4 immb:2 type:2 rm:4
+#ADD T1 000 1100 rm:3 rn:3 rd:3
+#ADD T3 11101 01 1000 s rn:4 0 imma:3 rd:4 immb:2 type:2 rm:4
+
+#QDADD T1 11111 010 1000 rn:4 1111 rd:4 1001 rm:4
+#QADD T1 11111 010 1000 rn:4 1111 rd:4 1000 rm:4
+#QDSUB T1 11111 010 1000 rn:4 1111 rd:4 1011 rm:4
+#QSUB T1 11111 010 1000 rn:4 1111 rd:4 1010 rm:4
+
+PKH T1 11101 01 0110 0 rn:4 0 imma:3 rd:4 immb:2 tb 0 rm:4
