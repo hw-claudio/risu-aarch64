@@ -161,17 +161,21 @@ sub gen_one_insn($@)
     }
 }
 
-sub write_test_code($)
+sub write_test_code($$)
 {
-    my $condprob = @_;
+    my ($condprob, $numinsns) = @_;
 
     # TODO better random number generator?
     srand(0);
 
-    for my $insn_enc (keys %insn_details) {
+    my @keys = keys %insn_details;
+
+    for (1..$numinsns) {
+        my $insn_enc = $keys[int rand (@keys)];
         #dump_insn_details($insn_enc, @{$insn_details{$insn_enc}});
         my $forcecond = (rand() < $condprob) ? 1 : 0;
         gen_one_insn($forcecond, @{$insn_details{$insn_enc}});
+        write_compare();
     }
 }
 
@@ -285,12 +289,13 @@ sub main()
     my $infile = $ARGV[0];
     my $outfile = $ARGV[1];
     my $condprob = 1; # probability of making an insn conditional
+    my $numinsns = 100; # number of random insns to generate
     
     parse_config_file($infile);
     
     open_bin($outfile);
     write_arm_prologue();
-    write_test_code($condprob);
+    write_test_code($condprob, $numinsns);
     write_test_end();
     close_bin();
     return 0;
