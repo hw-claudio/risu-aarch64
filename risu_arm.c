@@ -47,9 +47,7 @@ static int insnsize(ucontext_t *uc)
 void advance_pc(void *vuc)
 {
    ucontext_t *uc = vuc;
-   fprintf(stderr, "pc at %lx\n", uc->uc_mcontext.arm_pc);
    uc->uc_mcontext.arm_pc += insnsize(uc);
-   fprintf(stderr, "advancing pc to %lx\n", uc->uc_mcontext.arm_pc);
 }
 
 static int insn_is_eot_marker(uint32_t insn, int isz)
@@ -91,7 +89,6 @@ static void fill_reginfo(struct reginfo *ri, ucontext_t *uc)
    {
       ri->faulting_insn |= (*((uint16_t*)uc->uc_mcontext.arm_pc+1)) << 16;
    }
-   fprintf(stderr,"faulting insn %x size %d\n", ri->faulting_insn, ri->faulting_insn_size);
 }
 
 int send_register_info(int sock, void *uc)
