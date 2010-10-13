@@ -65,8 +65,13 @@ sub write_compare()
 
 sub write_switch_to_thumb()
 {
-    insn32(0xe28fc001); # add ip, pc, #1
-    insn32(0xe12fff1c); # bx ip
+    # Note that we have to clean up r0 afterwards
+    # so it isn't tainted with a value which depends
+    # on PC (and which might differ between hw and
+    # qemu/valgrind/etc)
+    insn32(0xe28f0001); # add r0, pc, #1
+    insn32(0xe12fff10); # bx r0
+    insn16(0x4040);     # eor r0,r0 (enc T1)
 }
 
 sub write_arm_prologue()
