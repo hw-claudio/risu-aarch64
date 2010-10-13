@@ -10,6 +10,8 @@ use strict;
 my @insns;
 my %insn_details;
 
+my $is_thumb = 0;
+
 sub open_bin
 {
     my ($fname) = @_;
@@ -27,6 +29,12 @@ sub insn32($)
     print BIN pack("V", $insn);
 }
 
+sub insn16($)
+{
+    my ($insn) = @_;
+    print BIN pack("v", $insn);
+}
+
 # The space 0xE7F___F_ is guaranteed to always UNDEF
 # and not to be allocated for insns in future architecture
 # revisions. So we use it for our 'do comparison' and
@@ -35,14 +43,30 @@ sub insn32($)
 # 'e5a' just in case the space is being used by somebody
 # else too.
 
+# For Thumb the equivalent space is 0xDExx.
+
 sub write_test_end()
 {
-    insn32(0xe7fe5af1);
+    if ($is_thumb) {
+        insn16(0xdee1);
+    } else {
+        insn32(0xe7fe5af1);
+    }
 }
 
 sub write_compare()
 {
-    insn32(0xe7fe5af0);
+    if ($is_thumb) {
+        insn16(0xdee0);
+    } else {
+        insn32(0xe7fe5af0);
+    }
+}
+
+sub write_switch_to_thumb()
+{
+    insn32(0xe28fc001); # add ip, pc, #1
+    insn32(0xe12fff1c); # bx ip
 }
 
 sub write_arm_prologue()
@@ -66,6 +90,9 @@ sub write_arm_prologue()
     # next:
     # clear the flags (NZCVQ and GE): msr APSR_nzcvqg, #0
     insn32(0xe32cf000);
+    if ($is_thumb) {
+        write_switch_to_thumb();
+    }
     write_compare();
 }
 
@@ -74,9 +101,10 @@ sub dump_insn_details($@)
     # Dump the instruction details for one insn
     my ($insn, @arr) = @_;
     print "insn $insn: ";
+    my $insnwidth = shift @arr;
     my $fixedbits = shift @arr;
     my $fixedbitmask = shift @arr;
-    print sprintf(" fixedbits %08x mask %08x ", $fixedbits, $fixedbitmask);
+    print sprintf(" insnwidth %d fixedbits %08x mask %08x ", $insnwidth, $fixedbits, $fixedbitmask);
     for my $k (0 .. @arr /3 - 1) {
         my ($var, $pos, $mask) = ($arr[3*$k], $arr[3*$k+1],$arr[3*$k+2]);
         print "($var, $pos, " . sprintf("%08x", $mask) . ") ";
@@ -90,6 +118,7 @@ sub gen_one_insn($@)
     INSN: while(1) {
         my ($forcecond, @arr) = @_;
         my $insn = int(rand(0xffffffff));
+        my $insnwidth = shift @arr;
         my $fixedbits = shift @arr;
         my $fixedbitmask = shift @arr;
 
@@ -111,7 +140,12 @@ sub gen_one_insn($@)
             }
         }
         # OK, we got a good one
-        insn32($insn);
+        if ($insnwidth == 16) {
+            # 16 bit thumb; the generated insn is in the high halfword
+            insn16($insn >> 16);
+        } else {
+            insn32($insn);
+        }
         return;
     }
 }
@@ -168,6 +202,7 @@ sub parse_config_file($)
         my $fixedbits = 0;
         my $fixedbitmask = 0;
         my $bitpos = 32;
+        my $insnwidth = 32;
         foreach my $bit (@bits) {
             my $bitlen;
             my $bitval;
@@ -203,7 +238,12 @@ sub parse_config_file($)
                 push @{$insn_details{$insnname}}, $var, $bitpos, $bitmask;
             }
         }
-        if ($bitpos != 0) {
+        if ($bitpos == 16) {
+            # assume this is a half-width thumb instruction
+            # Note that we don't fiddle with the bitmasks or positions,
+            # which means the generated insn will be in the high halfword!
+            $insnwidth = 16;
+        } elsif ($bitpos != 0) {
             print STDERR "$file:$.: not enough bits specified\n";
             exit(1);
         }
@@ -212,7 +252,7 @@ sub parse_config_file($)
             die "internal error: fixed bits not lined up with mask";
         }
         #  Stick the fixedbit info on the front of the array now we know it
-        unshift @{$insn_details{$insnname}}, $fixedbits, $fixedbitmask;
+        unshift @{$insn_details{$insnname}}, $insnwidth, $fixedbits, $fixedbitmask;
     }
     close(CFILE) or die "can't close $file: $!";
 }
@@ -221,10 +261,16 @@ sub parse_config_file($)
 sub main()
 {
     my $fname;
+    if ($#ARGV >= 0 && $ARGV[0] eq "--thumb") {
+        $is_thumb = 1;
+        shift @ARGV;
+    }
+
     if ($#ARGV != 1) {
         print STDERR "Usage: risugen inputfile outputfile\n";
         return 1;
     }
+
     my $infile = $ARGV[0];
     my $outfile = $ARGV[1];
     my $condprob = 1; # probability of making an insn conditional

@@ -1,0 +1,15 @@
+# Input file for risugen defining Thumb instructions
+# Copyright 2010 Linaro Limited
+
+# The format here is:
+# insnname encodingname bitfield ...
+# (and we'll have a trailing bit for specifying constraints later)
+# where each bitfield is either:
+#  var:sz  specifying a variable field of size sz (sz == 0 if :sz omitted)
+#  [01]*   specifying fixed bits
+# Field names beginning 'r' are special as they are assumed to be general
+# purpose registers. They get an automatic "cannot be 13 or 15" (sp/pc)
+# constraint.
+
+ADD T1 000 1100 rm:3 rn:3 rd:3
+ADD T3 11101 01 1000 s rn:4 0 imma:3 rd:4 immb:2 type:2 rm:4
