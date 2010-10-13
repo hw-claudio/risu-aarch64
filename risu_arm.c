@@ -13,21 +13,51 @@
 struct reginfo
 {
     uint32_t faulting_insn;
+    uint32_t faulting_insn_size;
     uint32_t gpreg[16];
     uint32_t cpsr;
 };
 
 struct reginfo master_ri, apprentice_ri;
 
-void advance_pc(void *vuc)
+static int insnsize(ucontext_t *uc)
 {
-   // TODO move forward by 2 if in Thumb
-   ucontext_t *uc = vuc;
-   uc->uc_mcontext.arm_pc += 4;
+   /* Return instruction size in bytes of the
+    * instruction at PC
+    */
+   if (uc->uc_mcontext.arm_cpsr & 0x20) 
+   {
+      uint16_t faulting_insn = *((uint16_t*)uc->uc_mcontext.arm_pc);
+      switch (faulting_insn & 0xF800)
+      {
+         case 0xE800:
+         case 0xF000:
+         case 0xF800:
+            /* 32 bit Thumb2 instruction */
+            return 4;
+         default:
+            /* 16 bit Thumb instruction */
+            return 2;
+      }
+   }
+   /* ARM instruction */
+   return 4;
 }
 
-static int insn_is_eot_marker(uint32_t insn)
+void advance_pc(void *vuc)
 {
+   ucontext_t *uc = vuc;
+   fprintf(stderr, "pc at %lx\n", uc->uc_mcontext.arm_pc);
+   uc->uc_mcontext.arm_pc += insnsize(uc);
+   fprintf(stderr, "advancing pc to %lx\n", uc->uc_mcontext.arm_pc);
+}
+
+static int insn_is_eot_marker(uint32_t insn, int isz)
+{
+   if (isz == 2) 
+   {
+      return (insn == 0xdee1);
+   }
    return (insn == 0xe7fe5af1);
 }
 
@@ -55,8 +85,13 @@ static void fill_reginfo(struct reginfo *ri, ucontext_t *uc)
    // doesn't fill in enough fields yet.
    ri->cpsr = uc->uc_mcontext.arm_cpsr & 0xF80F0000;
 
-   // TODO thumb mode?
-   ri->faulting_insn = *((uint32_t*)uc->uc_mcontext.arm_pc);
+   ri->faulting_insn = *((uint16_t*)uc->uc_mcontext.arm_pc);
+   ri->faulting_insn_size = insnsize(uc);
+   if (ri->faulting_insn_size != 2)
+   {
+      ri->faulting_insn |= (*((uint16_t*)uc->uc_mcontext.arm_pc+1)) << 16;
+   }
+   fprintf(stderr,"faulting insn %x size %d\n", ri->faulting_insn, ri->faulting_insn_size);
 }
 
 int send_register_info(int sock, void *uc)
@@ -73,6 +108,7 @@ int send_register_info(int sock, void *uc)
 int recv_and_compare_register_info(int sock, void *uc)
 {
    int resp;
+
    fill_reginfo(&master_ri, uc);
    recv_data_pkt(sock, &apprentice_ri, sizeof(apprentice_ri));
    if (memcmp(&master_ri, &apprentice_ri, sizeof(master_ri)) != 0)
@@ -80,7 +116,7 @@ int recv_and_compare_register_info(int sock, void *uc)
       /* mismatch */
       resp = 2;
    }
-   else if (insn_is_eot_marker(master_ri.faulting_insn))
+   else if (insn_is_eot_marker(master_ri.faulting_insn, master_ri.faulting_insn_size))
    {
       /* end of test */
       resp = 1;
