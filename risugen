@@ -140,10 +140,21 @@ sub gen_one_insn($@)
             }
         }
         # OK, we got a good one
-        if ($insnwidth == 16) {
-            # 16 bit thumb; the generated insn is in the high halfword
+        if ($is_thumb) {
+            # Since the encoding diagrams in the ARM ARM give 32 bit
+            # Thumb instructions as low half | high half, we
+            # flip the halves here so that the input format in
+            # the config file can be in the same order as the ARM.
+            # For a 16 bit Thumb instruction the generated insn is in
+            # the high halfword (because we didn't bother to readjust
+            # all the bit positions in parse_config_file() when we
+            # got to the end and found we only had 16 bits).
             insn16($insn >> 16);
+            if ($insnwidth == 32) {
+                insn16($insn & 0xffff);
+            }
         } else {
+            # ARM is simple, always a 32 bit word
             insn32($insn);
         }
         return;
