@@ -190,17 +190,49 @@ int recv_and_compare_register_info(int sock, void *uc)
 static void dump_reginfo(struct reginfo *ri)
 {
    int i;
-   fprintf(stderr, "  faulting insn %x\n", ri->faulting_insn);
+   if (ri->faulting_insn_size == 2)
+      fprintf(stderr, "  faulting insn %04x\n", ri->faulting_insn);
+   else
+      fprintf(stderr, "  faulting insn %08x\n", ri->faulting_insn);
    for (i = 0; i < 16; i++)
    {
-      fprintf(stderr, "  r%d: %x\n", i, ri->gpreg[i]);
+      fprintf(stderr, "  r%d: %08x\n", i, ri->gpreg[i]);
    }
-   fprintf(stderr, "  cpsr: %x\n", ri->cpsr);
+   fprintf(stderr, "  cpsr: %08x\n", ri->cpsr);
    for (i = 0; i < 32; i++)
    {
-      fprintf(stderr, "  d%d: %llx\n", i, ri->fpregs[i]);
+      fprintf(stderr, "  d%d: %016llx\n", i, ri->fpregs[i]);
    }
-   fprintf(stderr, "  fpscr: %x\n", ri->fpscr);
+   fprintf(stderr, "  fpscr: %08x\n", ri->fpscr);
+}
+
+static void report_mismatch_detail(struct reginfo *m, struct reginfo *a)
+{
+   int i;
+   fprintf(stderr, "mismatch detail (master : apprentice):\n");
+   if (m->faulting_insn_size != a->faulting_insn_size)
+      fprintf(stderr, "  faulting insn size mismatch %d vs %d\n", m->faulting_insn_size, a->faulting_insn_size);
+   else if (m->faulting_insn != a->faulting_insn)
+   {
+      if (m->faulting_insn_size == 2)
+         fprintf(stderr, "  faulting insn mismatch %04x vs %04x\n", m->faulting_insn, a->faulting_insn);
+      else
+         fprintf(stderr, "  faulting insn mismatch %08x vs %08x\n", m->faulting_insn, a->faulting_insn);
+   }
+   for (i = 0; i < 16; i++)
+   {
+      if (m->gpreg[i] != a->gpreg[i])
+         fprintf(stderr, "  r%d: %08x vs %08x\n", i, m->gpreg[i], a->gpreg[i]);
+   }
+   if (m->cpsr != a->cpsr)
+      fprintf(stderr, "  cpsr: %08x vs %08x\n", m->cpsr, a->cpsr);
+   for (i = 0; i < 32; i++)
+   {
+      if (m->fpregs[i] != a->fpregs[i])
+         fprintf(stderr, "  d%d: %016llx vs %016llx\n", i, m->fpregs[i], a->fpregs[i]);
+   }
+   if (m->fpscr != a->fpscr)
+      fprintf(stderr, "  fpscr: %08x vs %08x\n", m->fpscr, a->fpscr);
 }
 
 /* Print a useful report on the status of the last comparison
@@ -222,6 +254,7 @@ int report_match_status(void)
       return 0;
    }
    fprintf(stderr, "mismatch!\n");
+   report_mismatch_detail(&master_ri, &apprentice_ri);
    return 1;
 }
 
