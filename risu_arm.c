@@ -106,7 +106,11 @@ static void fill_reginfo_vfp(struct reginfo *ri, ucontext_t *uc)
                ri->fpregs[i] = *rs++;
                ri->fpregs[i] |= (uint64_t)(*rs++) << 32;
             }
-            ri->fpscr = *rs;
+            /* Ignore the UNK/SBZP bits. Also ignore the cumulative exception
+             * flags for the moment, because nobody actually cares about them
+             * and qemu certainly gets them wrong...
+             */
+            ri->fpscr = (*rs) & 0xffff9f00;
             return;
          }
          default:
