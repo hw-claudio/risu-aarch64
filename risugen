@@ -79,14 +79,27 @@ sub write_arm_prologue()
     # We will start in ARM mode because we're just loaded
     # as binary and jump to the aligned start of it, so
     # the target address LSB is always 0.
+
+    # TODO hardcoded, also no d16-d31 initialsiation
+    my $vfp = 1;  # 0 : no vfp, 1 : vfpd16
     
     # initialise all registers
-    # add r0, pc, #4
-    insn32(0xe28f0004);
-    # ldmia r0, {r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r14}
-    insn32(0xe8905fff);
-    # b next
-    insn32(0xea00000d);
+    if ($vfp) {
+        insn32(0xe28f0008);    # add r0, pc, #8
+        insn32(0xecb00b20);    # vldmia r0!, {d0-d15}
+    } else {
+        insn32(0xe28f0004);    # add r0, pc, #4
+    }
+    
+    insn32(0xe8905fff);        # ldmia r0, {r0-r12,r14}
+    my $datalen = 14;
+    $datalen += 32 if ($vfp);
+    insn32(0xea000000 + ($datalen-1));    # b next
+    if ($vfp) {
+        for (0..31) {
+            insn32(rand(0xffffffff));
+        }
+    }
     #  .word [14 words of data for r0..r12,r14]
     insn32(0x1234567); insn32(0x37346434); insn32(0x68124126); insn32(0x34716483);
     insn32(0x7917464); insn32(0xabcedef0); insn32(0xab8e83ba); insn32(0x734ba84a);
