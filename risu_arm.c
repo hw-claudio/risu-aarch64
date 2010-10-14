@@ -12,10 +12,12 @@
  */
 struct reginfo
 {
+    uint64_t fpregs[32];
     uint32_t faulting_insn;
     uint32_t faulting_insn_size;
     uint32_t gpreg[16];
     uint32_t cpsr;
+    uint32_t fpscr;
 };
 
 struct reginfo master_ri, apprentice_ri;
@@ -59,6 +61,62 @@ static int insn_is_eot_marker(uint32_t insn, int isz)
    return (insn == 0xe7fe5af1);
 }
 
+
+static void fill_reginfo_vfp(struct reginfo *ri, ucontext_t *uc)
+{
+   // Read VFP registers. These live in uc->uc_regspace, which is
+   // a sequence of
+   //   u32 magic
+   //   u32 size
+   //   data....
+   // blocks. We have to skip through to find the one for VFP.
+   unsigned long *rs = uc->uc_regspace;
+   
+   for (;;) 
+   {
+      switch (*rs++)
+      {
+         case 0:
+         {
+            /* We didn't find any VFP at all (probably a no-VFP
+             * kernel). Zero out all the state to avoid mismatches.
+             */
+            int j;
+            for (j = 0; j < 32; j++)
+               ri->fpregs[j] = 0;
+            ri->fpscr = 0;
+            return;
+         }
+         case 0x56465001: /* VFP_MAGIC */
+         {
+            /* This is the one we care about. The format (after the size word)
+             * is 32 * 64 bit registers, then the 32 bit fpscr, then some stuff
+             * we don't care about.
+             */
+            int i;
+            /* Skip if it's smaller than we expected (should never happen!) */
+            if (*rs < ((32*2)+1)) 
+            {
+               rs += (*rs / 4);
+               break;
+            }
+            rs++;
+            for (i = 0; i < 32; i++)
+            {
+               ri->fpregs[i] = *rs++;
+               ri->fpregs[i] |= (uint64_t)(*rs++) << 32;
+            }
+            ri->fpscr = *rs;
+            return;
+         }
+         default:
+            /* Some other kind of block, ignore it */
+            rs += (*rs / 4);
+            break;
+      }
+   }
+}
+
 static void fill_reginfo(struct reginfo *ri, ucontext_t *uc)
 {
    ri->gpreg[0] = uc->uc_mcontext.arm_r0;
@@ -89,6 +147,8 @@ static void fill_reginfo(struct reginfo *ri, ucontext_t *uc)
    {
       ri->faulting_insn |= (*((uint16_t*)uc->uc_mcontext.arm_pc+1)) << 16;
    }
+   
+   fill_reginfo_vfp(ri, uc);
 }
 
 int send_register_info(int sock, void *uc)
@@ -136,6 +196,11 @@ static void dump_reginfo(struct reginfo *ri)
       fprintf(stderr, "  r%d: %x\n", i, ri->gpreg[i]);
    }
    fprintf(stderr, "  cpsr: %x\n", ri->cpsr);
+   for (i = 0; i < 32; i++)
+   {
+      fprintf(stderr, "  d%d: %llx\n", i, ri->fpregs[i]);
+   }
+   fprintf(stderr, "  fpscr: %x\n", ri->fpscr);
 }
 
 /* Print a useful report on the status of the last comparison
