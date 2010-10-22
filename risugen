@@ -6,6 +6,7 @@
 # Usage: risugen outputfile
 
 use strict;
+use Getopt::Long;
 
 my @insns;
 my %insn_details;
@@ -216,6 +217,9 @@ sub gen_one_insn($@)
 sub write_test_code($$)
 {
     my ($condprob, $numinsns) = @_;
+    # convert from probability that insn will be conditional to
+    # probability of forcing insn to unconditional
+    $condprob = 1 - $condprob;
 
     # TODO better random number generator?
     srand(0);
@@ -329,25 +333,49 @@ sub parse_config_file($)
     close(CFILE) or die "can't close $file: $!";
 }
 
+sub usage()
+{
+    print <<EOT;
+Usage: risugen [options] inputfile outputfile
+
+where inputfile is a configuration file specifying instruction patterns
+and outputfile is the generated raw binary file.
+
+Valid options:
+    --thumb      : the instructions in the config file are Thumb, not ARM
+    --numinsns=n : generate n instructions (default is 10000)
+    --condprob=p : make instructions conditional with probability p
+                   (default is 0, ie all instructions are always executed)
+    --help       : print this message
+EOT
+}
 
 sub main()
 {
-    my $fname;
-    if ($#ARGV >= 0 && $ARGV[0] eq "--thumb") {
-        $is_thumb = 1;
-        shift @ARGV;
-    }
+    my $numinsns = 10000;
+    my $condprob = 0;
+    my ($infile, $outfile);
+
+    GetOptions( "help" => sub { usage(); exit(0); },
+                "thumb" => \$is_thumb,
+                "numinsns=i" => \$numinsns,
+                "condprob=f" => sub { 
+                    $condprob = $_[1];
+                    if ($condprob < 0.0 || $condprob > 1.0) {
+                        die "Value \"$condprob\" invalid for option condprob (must be between 0 and 1)\n";
+                    }
+                },
+        ) or return 1;
+
 
     if ($#ARGV != 1) {
-        print STDERR "Usage: risugen inputfile outputfile\n";
+        usage();
         return 1;
     }
 
-    my $infile = $ARGV[0];
-    my $outfile = $ARGV[1];
-    my $condprob = 1; # probability of forcing an insn unconditional
-    my $numinsns = 100000; # number of random insns to generate
-    
+    $infile = $ARGV[0];
+    $outfile = $ARGV[1];
+
     parse_config_file($infile);
     
     open_bin($outfile);
