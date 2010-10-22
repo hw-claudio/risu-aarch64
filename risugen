@@ -296,14 +296,14 @@ sub parse_config_file($)
                 $var = $1;
                 $bitlen = 1;
             } else {
-                print STDERR "$file:$.: unrecognised bitfield specifier $bit\n";
+                print STDERR "$file:$.: ($insn $enc) unrecognised bitfield specifier $bit\n";
                 exit(1);
             }
 
             my $bitmask = oct("0b". '1' x $bitlen);
             $bitpos -= $bitlen;
             if ($bitpos < 0) {
-                print STDERR "$file:$.: too many bits specified\n";
+                print STDERR "$file:$.: ($insn $enc) too many bits specified\n";
                 exit(1);
             }
 
@@ -320,7 +320,7 @@ sub parse_config_file($)
             # which means the generated insn will be in the high halfword!
             $insnwidth = 16;
         } elsif ($bitpos != 0) {
-            print STDERR "$file:$.: not enough bits specified\n";
+            print STDERR "$file:$.: ($insn $enc) not enough bits specified\n";
             exit(1);
         }
         if ((($fixedbits & $fixedbitmask) != $fixedbits)
