@@ -12,10 +12,13 @@ my %insn_details;
 
 my $is_thumb = 0;
 
+my $bytecount;
+
 sub open_bin
 {
     my ($fname) = @_;
     open(BIN, ">", $fname) or die "can't open %fname: $!";
+    $bytecount = 0;
 }
 
 sub close_bin
@@ -27,12 +30,21 @@ sub insn32($)
 {
     my ($insn) = @_;
     print BIN pack("V", $insn);
+    $bytecount += 4;
 }
 
 sub insn16($)
 {
     my ($insn) = @_;
     print BIN pack("v", $insn);
+    $bytecount += 2;
+}
+
+sub align4()
+{
+    if ($bytecount & 3) {
+        insn16(0xbf00);  # NOP
+    }
 }
 
 # The space 0xE7F___F_ is guaranteed to always UNDEF
@@ -74,37 +86,46 @@ sub write_switch_to_thumb()
     insn16(0x4040);     # eor r0,r0 (enc T1)
 }
 
-sub write_arm_prologue()
+sub write_switch_to_arm()
 {
-    # We will start in ARM mode because we're just loaded
-    # as binary and jump to the aligned start of it, so
-    # the target address LSB is always 0.
+    # Switch to ARM mode.
+    align4();
+    insn16(0x4778);  # bx pc
+    insn16(0xbf00);  # nop
+}
 
-    # TODO hardcoded, also no d16-d31 initialsiation
-    my $vfp = 1;  # 0 : no vfp, 1 : vfpd16
+
+sub write_random_register_data()
+{
+    # TODO hardcoded, also no d16-d31 initialisation
+    my $vfp = 2;  # 0 : no vfp, 1 : vfpd16, 2 : vfpd32
+    if ($is_thumb) {
+        write_switch_to_arm();
+    }
     
     # initialise all registers
-    if ($vfp) {
+    if ($vfp == 1) {
         insn32(0xe28f0008);    # add r0, pc, #8
         insn32(0xecb00b20);    # vldmia r0!, {d0-d15}
+    } elsif ($vfp == 2) {
+        insn32(0xe28f000c);    # add r0, pc, #12
+        insn32(0xecb00b20);    # vldmia r0!, {d0-d15}
+        insn32(0xecf00b20);    # vldmia r0!, {d16-d31}
     } else {
         insn32(0xe28f0004);    # add r0, pc, #4
     }
     
     insn32(0xe8905fff);        # ldmia r0, {r0-r12,r14}
     my $datalen = 14;
-    $datalen += 32 if ($vfp);
+    $datalen += (32 * $vfp);
     insn32(0xea000000 + ($datalen-1));    # b next
-    if ($vfp) {
-        for (0..31) {
-            insn32(rand(0xffffffff));
-        }
+    for (0..(($vfp * 32) - 1)) {
+        insn32(rand(0xffffffff));
     }
     #  .word [14 words of data for r0..r12,r14]
-    insn32(0x1234567); insn32(0x37346434); insn32(0x68124126); insn32(0x34716483);
-    insn32(0x7917464); insn32(0xabcedef0); insn32(0xab8e83ba); insn32(0x734ba84a);
-    insn32(0x7a923ba); insn32(0x841b823a); insn32(0xb1024ab2); insn32(0x87346141);
-    insn32(0x7416231); insn32(0x97857623);
+    for (0..13) {
+        insn32(rand(0xffffffff));
+    }
     # next:
     # clear the flags (NZCVQ and GE): msr APSR_nzcvqg, #0
     insn32(0xe32cf000);
@@ -112,6 +133,19 @@ sub write_arm_prologue()
         write_switch_to_thumb();
     }
     write_compare();
+}
+
+sub write_arm_prologue()
+{
+    # We will start in ARM mode because we're just loaded
+    # as binary and jump to the aligned start of it, so
+    # the target address LSB is always 0.
+    if ($is_thumb) {
+        # This mode change will be immediately followed by one
+        # in write_random_register_data() but never mind.
+        write_switch_to_thumb();
+    }
+    write_random_register_data();
 }
 
 sub dump_insn_details($@)
@@ -188,12 +222,17 @@ sub write_test_code($$)
 
     my @keys = keys %insn_details;
 
-    for (1..$numinsns) {
+    for my $i (1..$numinsns) {
         my $insn_enc = $keys[int rand (@keys)];
         #dump_insn_details($insn_enc, @{$insn_details{$insn_enc}});
         my $forcecond = (rand() < $condprob) ? 1 : 0;
         gen_one_insn($forcecond, @{$insn_details{$insn_enc}});
         write_compare();
+        # Rewrite the registers periodically. This avoids the tendency
+        # for the VFP registers to decay to NaNs and zeroes.
+        if (($i % 100) == 0) {
+            write_random_register_data();
+        }
     }
 }
 
@@ -306,8 +345,8 @@ sub main()
 
     my $infile = $ARGV[0];
     my $outfile = $ARGV[1];
-    my $condprob = 1; # probability of making an insn conditional
-    my $numinsns = 100; # number of random insns to generate
+    my $condprob = 1; # probability of forcing an insn unconditional
+    my $numinsns = 100000; # number of random insns to generate
     
     parse_config_file($infile);
     
