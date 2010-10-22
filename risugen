@@ -13,6 +13,8 @@ my %insn_details;
 
 my $is_thumb = 0;
 
+my @pattern_re = ();
+
 my $bytecount;
 
 sub open_bin
@@ -224,7 +226,17 @@ sub write_test_code($$)
     # TODO better random number generator?
     srand(0);
 
+    # Get a list of the insn keys which are permitted by the re patterns
     my @keys = keys %insn_details;
+    if (@pattern_re) {
+        my $re = '(' . join(')|(',@pattern_re) . ')';
+        @keys = grep /$re/, @keys;
+    }
+    if (!@keys) {
+        print STDERR "No instruction patterns available! (bad config file or --pattern argument?)\n";
+        exit(1);
+    }
+    print "Generating code using patterns: @keys...\n";
 
     for my $i (1..$numinsns) {
         my $insn_enc = $keys[int rand (@keys)];
@@ -343,9 +355,10 @@ and outputfile is the generated raw binary file.
 
 Valid options:
     --thumb      : the instructions in the config file are Thumb, not ARM
-    --numinsns=n : generate n instructions (default is 10000)
-    --condprob=p : make instructions conditional with probability p
+    --numinsns n : generate n instructions (default is 10000)
+    --condprob p : make instructions conditional with probability p
                    (default is 0, ie all instructions are always executed)
+    --pattern re[,re...] : only use instructions matching regular expression
     --help       : print this message
 EOT
 }
@@ -359,6 +372,7 @@ sub main()
     GetOptions( "help" => sub { usage(); exit(0); },
                 "thumb" => \$is_thumb,
                 "numinsns=i" => \$numinsns,
+                "pattern=s" => \@pattern_re,
                 "condprob=f" => sub { 
                     $condprob = $_[1];
                     if ($condprob < 0.0 || $condprob > 1.0) {
@@ -366,7 +380,8 @@ sub main()
                     }
                 },
         ) or return 1;
-
+    # allow "--pattern re,re" and "--pattern re --pattern re"
+    @pattern_re = split(/,/,join(',',@pattern_re));
 
     if ($#ARGV != 1) {
         usage();
