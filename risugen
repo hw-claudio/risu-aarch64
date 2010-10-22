@@ -216,6 +216,36 @@ sub gen_one_insn($@)
     }
 }
 
+my $lastprog;
+my $proglen;
+my $progmax;
+
+sub progress_start($$)
+{
+    ($proglen, $progmax) = @_;
+    $proglen -= 2; # allow for [] chars
+    $| = 1;        # disable buffering so we can see the meter...
+    print "[" . " " x $proglen . "]\r";
+    $lastprog = 0;
+}
+
+sub progress_update($)
+{
+    # update the progress bar with current progress
+    my ($done) = @_;
+    my $barlen = int($proglen * $done / $progmax);
+    if ($barlen != $lastprog) {
+        $lastprog = $barlen;
+        print "[" . "-" x $barlen . " " x ($proglen - $barlen) . "]\r";
+    }
+}
+
+sub progress_end()
+{
+    print "[" . "-" x $proglen . "]\n";
+    $| = 0;
+}
+
 sub write_test_code($$)
 {
     my ($condprob, $numinsns) = @_;
@@ -237,6 +267,7 @@ sub write_test_code($$)
         exit(1);
     }
     print "Generating code using patterns: @keys...\n";
+    progress_start(78, $numinsns);
 
     for my $i (1..$numinsns) {
         my $insn_enc = $keys[int rand (@keys)];
@@ -249,7 +280,9 @@ sub write_test_code($$)
         if (($i % 100) == 0) {
             write_random_register_data();
         }
+        progress_update($i);
     }
+    progress_end();
 }
 
 sub parse_config_file($)
