@@ -19,7 +19,8 @@
 
 ########### VCVT #########################################
 # These patterns should cover all the VCVT* instructions
-# in their ARM encodings.
+# in their ARM encodings. NB that the patterns for half
+# precision conversions are commented out and untested.
 ##########################################################
 
 # VCVT between fp and int: split in two because opc2 must be 000 or 10x (A8.6.295)
