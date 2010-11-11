@@ -1,9 +1,17 @@
 #!/usr/bin/perl -w
+###############################################################################
+# Copyright (c) 2010 Linaro Limited
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Eclipse Public License v1.0
+# which accompanies this distribution, and is available at
+# http://www.eclipse.org/legal/epl-v10.html
 #
-# risugen -- generate a test binary file for use with risu
-# Copyright 2010 Linaro Limited.
+# Contributors:
+#     Peter Maydell (Linaro) - initial implementation
+###############################################################################
 
-# Usage: risugen outputfile
+# risugen -- generate a test binary file for use with risu
+# See 'risugen --help' for usage information.
 
 use strict;
 use Getopt::Long;
