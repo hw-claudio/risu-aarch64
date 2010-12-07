@@ -243,7 +243,11 @@ sub dump_insn_details($@)
     my $insnwidth = shift @arr;
     my $fixedbits = shift @arr;
     my $fixedbitmask = shift @arr;
+    my $constraint = shift @arr;
     print sprintf(" insnwidth %d fixedbits %08x mask %08x ", $insnwidth, $fixedbits, $fixedbitmask);
+    if ($constraint ne "") {
+        print "constraint $constraint ";
+    }
     for my $k (0 .. @arr /3 - 1) {
         my ($var, $pos, $mask) = ($arr[3*$k], $arr[3*$k+1],$arr[3*$k+2]);
         print "($var, $pos, " . sprintf("%08x", $mask) . ") ";
@@ -254,12 +258,15 @@ sub dump_insn_details($@)
 sub gen_one_insn($@)
 {
     # Given an instruction-details array, generate an instruction
+    my $constraintfailures = 0;
+
     INSN: while(1) {
         my ($forcecond, @arr) = @_;
         my $insn = int(rand(0xffffffff));
         my $insnwidth = shift @arr;
         my $fixedbits = shift @arr;
         my $fixedbitmask = shift @arr;
+        my $constraint = shift @arr;
 
         $insn &= ~$fixedbitmask;
         $insn |= $fixedbits;
@@ -278,7 +285,35 @@ sub gen_one_insn($@)
                 }
             }
         }
+        if ($constraint ne "") {
+            # user-specified constraint: evaluate in an environment
+            # with variables set corresponding to the variable fields.
+            my $evalstr = "{ ";
+            for my $k (0 .. @arr /3 - 1) {
+                my ($var, $pos, $mask) = ($arr[3*$k], $arr[3*$k+1],$arr[3*$k+2]);
+                my $val = ($insn >> $pos) & $mask;
+                $evalstr .= "my (\$$var) = $val; ";
+            }
+            $evalstr .= $constraint;
+            $evalstr .= "}";
+            my $v = eval $evalstr;
+            if ($@) {
+                print "Syntax error detected evaluating constraint string:\n$constraint\n";
+                exit(1);
+            }
+            if (!$v) {
+                $constraintfailures++;
+                if ($constraintfailures > 10000) {
+                    print "10000 consecutive constraint failures for constraint string:\n$constraint\n";
+                    exit (1);
+                }
+                next INSN;
+            }
+        }
+
         # OK, we got a good one
+        $constraintfailures = 0;
+
         if ($is_thumb) {
             # Since the encoding diagrams in the ARM ARM give 32 bit
             # Thumb instructions as low half | high half, we
@@ -382,17 +417,33 @@ sub parse_config_file($)
     # Field names beginning 'r' are special as they are assumed to be general
     # purpose registers. They get an automatic "cannot be 13 or 15" (sp/pc)
     # constraint.
+    # The optional eval-block at the end of the line (which must be
+    # enclosed in braces) is a perl statement to be evaluated and which
+    # must return true if the generated statement is OK, false if the
+    # generator should retry with a fresh random number. It is evaluated
+    # in a context where variables with the same names as the defined
+    # variable fields are initialised. The intention is that odd cases
+    # where you need to apply some sort of constraint to the generated
+    # instruction can be handled via this mechanism.
+    # NB that there is no sanity checking that you don't do bad things
+    # in the eval block, although there is a basic check for syntax
+    # errors and and we bail out if the constraint returns failure too often.
 
     # Our data structure here is fairly simple:
     # an assoc array %insn_details whose keys are "insn_enc" strings
     # and whose values are array references. Each array is, in order:
-    #  fixedbits, fixedbitmask, var,bitpos,mask , var,bitpos,mask ...
+    # insnwidth, fixedbits, fixedbitmask, constraint, var,bitpos,mask , var,bitpos,mask ...
 
     open(CFILE, $file) or die "can't open $file: $!";
     while (<CFILE>)
     {
         next if /^\s*#/;
         next if /^\s*$/;
+        my ($constraint) = "";
+        if (s/^([^{]*)\{(.*)$/$1/) {
+            # we have a constraint
+            $constraint = "{ " . $2;
+        }
         my ($insn, $enc, @bits) = split;
         if (!defined $enc) {
             print STDERR "$file:$.: no insn or encoding?\n";
@@ -457,7 +508,7 @@ sub parse_config_file($)
             die "internal error: fixed bits not lined up with mask";
         }
         #  Stick the fixedbit info on the front of the array now we know it
-        unshift @{$insn_details{$insnname}}, $insnwidth, $fixedbits, $fixedbitmask;
+        unshift @{$insn_details{$insnname}}, $insnwidth, $fixedbits, $fixedbitmask, $constraint;
     }
     close(CFILE) or die "can't close $file: $!";
 }

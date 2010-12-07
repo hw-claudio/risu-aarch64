@@ -20,6 +20,17 @@
 # Field names beginning 'r' are special as they are assumed to be general
 # purpose registers. They get an automatic "cannot be 13 or 15" (sp/pc)
 # constraint.
+# The optional eval-block at the end of the line (which must be
+# enclosed in braces) is a perl statement to be evaluated and which
+# must return true if the generated statement is OK, false if the
+# generator should retry with a fresh random number. It is evaluated
+# in a context where variables with the same names as the defined
+# variable fields are initialised. The intention is that odd cases
+# where you need to apply some sort of constraint to the generated
+# instruction can be handled via this mechanism.
+# NB that there is no sanity checking that you don't do bad things
+# in the eval block, although there is a basic check for syntax
+# errors and and we bail out if the constraint returns failure too often.
 
 #ADD T1 000 1100 rm:3 rn:3 rd:3
 #ADD T3 11101 01 1000 s rn:4 0 imma:3 rd:4 immb:2 type:2 rm:4
