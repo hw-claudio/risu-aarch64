@@ -1,0 +1,98 @@
+risu -- random instruction sequence generator for userspace testing
+
+risu is a tool intended to assist in testing the implementation of
+models of the ARM architecture such as qemu and valgrind. In particular
+it restricts itself to considering the parts of the architecture
+visible from Linux userspace, so it can be used to test programs
+which only implement userspace, like valgrind and qemu's linux-user
+mode.
+
+risu is also the Japanese word for squirrel.
+
+Usage
+-----
+
+The principle is straightforward: we generate a random sequence of
+instructions, and run it on both native hardware and the model under
+test. Register values are cross-checked after every instruction and
+if there is a mismatch then the test fails.
+
+risugen is a Perl script which generates a binary blob containing
+the random instructions. It works by reading a configuration file
+which specifies instruction patterns to be generated. Command line
+options can be used to restrict the set of instruction patterns
+used. For example:
+
+  ./risugen --numinsns 10000 --pattern 'VQSHL.*imm.*' arm.risu vqshlimm.out
+
+reads the configuration file arm.risu, and generates 10000 instructions
+based on the instruction patterns matching the regular expression
+"VQSHL.*imm.*". The resulting binary is written to vqshlimm.out.
+
+This binary can then be passed to the risu program, which is
+written in C. (Build it by running 'make'.) You need to run risu
+on both an ARM native target and on the program under test. The
+ARM native system is the 'master' end, so run it like this:
+
+  ./risu --master vqshlimm.out
+
+It will sit waiting for a TCP connection from the 'apprentice'
+which must be run on the program under test. In theory this is
+as simple as:
+
+  risu --host ip-addr-of-master vqshlimm.out
+
+However since you actually need to run it under qemu or similar
+you probably need an ARM chroot to run it in, and to do something
+like
+ sudo chroot /srv/chroot/arm-mav /risu --host ipaddr vqshlimm.out
+
+When the apprentice connects to the master, they will both start
+running the binary and checking results with each other. When the
+test ends the master will print a register dump and the match or
+mismatch status to its standard output.
+
+NB that in the register dump the r15 (pc) value will be given
+as an offset from the start of the binary, not an absolute value.
+
+Implementation details and points to note
+-----------------------------------------
+
+The register checking is done by registering a signal handler for
+SIGILL, which then has access to register contents via the
+sigcontext argument to the handler. Particular opcodes in the
+guaranteed-to-UNDEF space are then used to say "check register
+values" and "end of test".
+
+There are some obvious limitations to this approach:
+
+ * we assume that all the interesting state is in the registers
+accessible to a signal handler. This is true in most cases but
+we can't test complex instructions like ldrexd/strexd.
+ * the generator is fairly simplistic and just alternates generated
+instructions and "check-registers" commands. So branches and
+loads or stores can't be checked this way. (This is more of a
+restriction in the generator, not the test harness proper.)
+ * we only catch gross errors of decode or implementation of
+an instruction. We won't notice problems like overenthusiastic
+reordering of instructions in the model's code generator, for
+example.
+ * by definition, we can only test user-space visible instructions,
+not those which are only accessible to privileged code.
+
+Some limits which are more accidental:
+
+ * I'm only testing ARM. The generator is rather ARM-specific.
+The test harness is less so (there's a skeleton of an x86
+implementation, for example) but only ARM is tested.
+ * we don't actually compare FP status flags, simply because
+I'm pretty sure qemu doesn't get them right yet and I'm more
+interested in fixing gross bugs first.
+ * there isn't currently any support for a "record and replay
+results" mode. This would allow you to record the correct
+results from the ARM host once and then test a model implementation
+even if you didn't have the corresponding native hardware.
+ * the documentation is rather minimal. This is because I don't
+really expect many people to need to use this :-)
+
+-- Peter Maydell <peter.maydell@linaro.org>
