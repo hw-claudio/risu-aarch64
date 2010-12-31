@@ -222,11 +222,20 @@ sub write_random_register_data()
     write_compare();
 }
 
-sub write_arm_prologue()
+sub write_arm_prologue($)
 {
+    my ($fpscr) = @_;
     # We will start in ARM mode because we're just loaded
     # as binary and jump to the aligned start of it, so
     # the target address LSB is always 0.
+
+    # movw r0, imm16
+    insn32(0xe3000000 | ($fpscr & 0xfff) | (($fpscr & 0xf000) << 4));
+    # movt r0, imm16
+    insn32(0xe3400000 | (($fpscr & 0xf0000000) >> 12) | (($fpscr & 0x0fff0000) >> 16));
+    # vmsr fpscr, r0
+    insn32(0xeee10a10);
+
     if ($is_thumb) {
         # This mode change will be immediately followed by one
         # in write_random_register_data() but never mind.
@@ -524,6 +533,7 @@ and outputfile is the generated raw binary file.
 Valid options:
     --thumb      : the instructions in the config file are Thumb, not ARM
     --numinsns n : generate n instructions (default is 10000)
+    --fpscr n    : set initial FPSCR value (default is 0)
     --condprob p : make instructions conditional with probability p
                    (default is 0, ie all instructions are always executed)
     --pattern re[,re...] : only use instructions matching regular expression
@@ -535,11 +545,13 @@ sub main()
 {
     my $numinsns = 10000;
     my $condprob = 0;
+    my $fpscr = 0;
     my ($infile, $outfile);
 
     GetOptions( "help" => sub { usage(); exit(0); },
                 "thumb" => \$is_thumb,
                 "numinsns=i" => \$numinsns,
+                "fpscr=i" => \$fpscr,
                 "pattern=s" => \@pattern_re,
                 "condprob=f" => sub { 
                     $condprob = $_[1];
@@ -562,7 +574,7 @@ sub main()
     parse_config_file($infile);
     
     open_bin($outfile);
-    write_arm_prologue();
+    write_arm_prologue($fpscr);
     write_test_code($condprob, $numinsns);
     write_test_end();
     close_bin();
