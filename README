@@ -92,6 +92,9 @@ interested in fixing gross bugs first.
 results" mode. This would allow you to record the correct
 results from the ARM host once and then test a model implementation
 even if you didn't have the corresponding native hardware.
+ * it would be nice if it could be compiled statically to avoid
+the requirement for the ARM chroot for qemu testing, but the
+use of gethostbyname() gets in the way of that.
  * the documentation is rather minimal. This is because I don't
 really expect many people to need to use this :-)
 
