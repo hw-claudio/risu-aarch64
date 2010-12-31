@@ -37,6 +37,13 @@
 #RBIT A1 cond:4 0110 1111 1111 rd:4 1111 0011 rm:4
 #VADD A2 cond:4 11100 d 11 vn:4 vd:4 101 sz n 0 m 0 vm:4
 
+# Some patterns for testing basic VFP arithmetic, not
+# because we expect these to be wrong but so we can check
+# that they work when we fiddle with the FPSCR.
+VADD A2 cond:4 11100 d 11 vn:4 vd:4 101 sz n 0 m 0 vm:4
+VSUB A2 cond:4 11100 d 11 vn:4 vd:4 101 sz n 1 m 0 vm:4
+VMUL A2 cond:4 11100 d 10 vn:4 vd:4 101 sz n 0 m 0 vm:4
+VDIV A1 cond:4 11101 d 00 vn:4 vd:4 101 sz n 0 m 0 vm:4
 
 ########### VCVT #########################################
 # These patterns should cover all the VCVT* instructions
@@ -104,3 +111,6 @@ VQSHLU_imm_b A1 1111 001 1 1 d imm:6 vd:4 011 0 l 0 m 1 vm:4 { ($l == 1) || ($im
 VQSHL_imm_a A1 1111 001 u 1 d imm:6 vd:3 0 011 1 l 1 m 1 vm:3 0 { ($l == 1) || ($imm & 0xca != 0); }
 VQSHL_imm_b A1 1111 001 u 1 d imm:6 vd:4 011 1 l 0 m 1 vm:4 { ($l == 1) || ($imm & 0xca != 0); }
 
+# Q=1: UNDEF if lsbit of vn/vd/vm is 1
+VRSQRTS_a A1 1111 0010 0 d 1 0 vn:3 0 vd:3 0 1111 n 1 m 1 vm:3 0
+VRSQRTS_b A1 1111 0010 0 d 1 0 vn:4 vd:4 1111 n 0 m 1 vm:4
