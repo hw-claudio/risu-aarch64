@@ -114,3 +114,11 @@ VQSHL_imm_b A1 1111 001 u 1 d imm:6 vd:4 011 1 l 0 m 1 vm:4 { ($l == 1) || ($imm
 # Q=1: UNDEF if lsbit of vn/vd/vm is 1
 VRSQRTS_a A1 1111 0010 0 d 1 0 vn:3 0 vd:3 0 1111 n 1 m 1 vm:3 0
 VRSQRTS_b A1 1111 0010 0 d 1 0 vn:4 vd:4 1111 n 0 m 1 vm:4
+
+# various 32x32->64 multiplies
+# we omit the v5-and-below constraint that rn must not be rdhi or rdlo
+UMAAL A1 cond:4 0000 0100 rdhi:4 rdlo:4 rm:4 1001 rn:4 { $rdhi != $rdlo; }
+UMLAL A1 cond:4 0000 101 s rdhi:4 rdlo:4 rm:4 1001 rn:4 { $rdhi != $rdlo; }
+UMULL A1 cond:4 0000 100 s rdhi:4 rdlo:4 rm:4 1001 rn:4 { $rdhi != $rdlo; }
+SMLAL A1 cond:4 0000 111 s rdhi:4 rdlo:4 rm:4 1001 rn:4 { $rdhi != $rdlo; }
+SMULL A1 cond:4 0000 110 s rdhi:4 rdlo:4 rm:4 1001 rn:4 { $rdhi != $rdlo; }
