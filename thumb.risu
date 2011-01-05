@@ -41,3 +41,10 @@
 #QSUB T1 11111 010 1000 rn:4 1111 rd:4 1010 rm:4
 
 PKH T1 11101 01 0110 0 rn:4 0 imma:3 rd:4 immb:2 tb 0 rm:4
+
+# 32x32->64 but result is high word only
+SMMLA T1 11111 0110 101 rn:4 ra:4 rd:4 000 r rm:4
+SMMLS T1 11111 0110 110 rn:4 ra:4 rd:4 000 r rm:4
+# Note that this doesn't overlap with SMMLA because of the implicit
+# constraints on registers fields (ie not 13 or 15)
+SMMUL T1 11111 0110 101 rn:4 1111 rd:4 000 r rm:4

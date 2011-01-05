@@ -122,3 +122,10 @@ UMLAL A1 cond:4 0000 101 s rdhi:4 rdlo:4 rm:4 1001 rn:4 { $rdhi != $rdlo; }
 UMULL A1 cond:4 0000 100 s rdhi:4 rdlo:4 rm:4 1001 rn:4 { $rdhi != $rdlo; }
 SMLAL A1 cond:4 0000 111 s rdhi:4 rdlo:4 rm:4 1001 rn:4 { $rdhi != $rdlo; }
 SMULL A1 cond:4 0000 110 s rdhi:4 rdlo:4 rm:4 1001 rn:4 { $rdhi != $rdlo; }
+
+# 32x32->64 but result is high word only
+SMMLA A1 cond:4 01110101 rd:4 ra:4 rm:4 00 r 1 rn:4
+SMMLS A1 cond:4 01110101 rd:4 ra:4 rm:4 11 r 1 rn:4
+# Note that this doesn't overlap with SMMLA because of the implicit
+# constraints on registers fields (ie not 13 or 15)
+SMMUL A1 cond:4 01110101 rd:4 1111 rm:4 00 r 1 rn:4
