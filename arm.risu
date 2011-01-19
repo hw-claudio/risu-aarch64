@@ -129,3 +129,8 @@ SMMLS A1 cond:4 01110101 rd:4 ra:4 rm:4 11 r 1 rn:4
 # Note that this doesn't overlap with SMMLA because of the implicit
 # constraints on registers fields (ie not 13 or 15)
 SMMUL A1 cond:4 01110101 rd:4 1111 rm:4 00 r 1 rn:4
+
+USAT A1   cond:4 0110111 satimm:5 rd:4 imm:5 sh 0 1 rn:4
+SSAT A1   cond:4 0110101 satimm:5 rd:4 imm:5 sh 0 1 rn:4
+SSAT16 A1 cond:4 01101010 satimm:4 rd:4 1111 0011 rn:4
+USAT16 A1 cond:4 01101110 satimm:4 rd:4 1111 0011 rn:4
