@@ -387,7 +387,7 @@ sub write_test_code($$)
     # Get a list of the insn keys which are permitted by the re patterns
     my @keys = keys %insn_details;
     if (@pattern_re) {
-        my $re = '(' . join(')|(',@pattern_re) . ')';
+        my $re = '\b((' . join(')|(',@pattern_re) . '))\b';
         @keys = grep /$re/, @keys;
     }
     if (!@keys) {
@@ -458,7 +458,7 @@ sub parse_config_file($)
             print STDERR "$file:$.: no insn or encoding?\n";
             exit(1);
         }
-        my $insnname = "${insn}_${enc}";
+        my $insnname = "${insn} ${enc}";
         if (exists $insn_details{$insnname}) {
             print STDERR "$file:$.: redefinition of $insnname\n";
             exit(1);
@@ -537,6 +537,10 @@ Valid options:
     --condprob p : make instructions conditional with probability p
                    (default is 0, ie all instructions are always executed)
     --pattern re[,re...] : only use instructions matching regular expression
+                   Each re must match a full word (that is, we match on
+                   the perl regex '\\b((re)|(re))\\b'). This means that
+                   'VMULL' will match 'VMULL A1' and 'VMULL A2' but not
+                   'VMULL_scalar A1'. This is generally what you wanted.
     --help       : print this message
 EOT
 }
