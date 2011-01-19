@@ -134,3 +134,23 @@ USAT A1   cond:4 0110111 satimm:5 rd:4 imm:5 sh 0 1 rn:4
 SSAT A1   cond:4 0110101 satimm:5 rd:4 imm:5 sh 0 1 rn:4
 SSAT16 A1 cond:4 01101010 satimm:4 rd:4 1111 0011 rn:4
 USAT16 A1 cond:4 01101110 satimm:4 rd:4 1111 0011 rn:4
+
+# VMLAL, VMLSL, VQDMLAL, VQDMLSL, VMULL, VQDMULL
+# NB that enc A1 is actually VMLA/VMLS only, A2 is VMLAL/VMLSL only
+VMLAL A2 1111 001 u 1 d sz:2 vn:4 vd:3 0 10 op 0 n 0 m 0 vm:4 { $sz != 3; }
+# VQDMLAL and VQDMLSL (not scalar form)
+VQDLAL A1 1111 0010 1 d sz:2 vn:4 vd:3 0 10 op 1 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# VMULL (excludes the polynomial case!)
+VMULL A2 1111 001 u 1 d sz:2 vn:4 vd:3 0 11 0 0 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# VQDMULL (not scalar form)
+VQDMULL A1 1111 0010 1 d sz:2 vn:4 vd:3 0 1101 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+
+# Scalar forms, VMLAL, VMLSL, VQDMLAL, VQDMLSL, VMULL, VQDMULL
+# VMLAL/VMLSL scalar
+VMLAL_scalar A2 1111 001 u 1 d sz:2 vn:4 vd:3 0 0 op 1 0 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# VQDMLAL/VQDMLSL scalar
+VQDMLAL_scalar A2 1111 0010 1 d sz:2 vn:4 vd:3 0 0 op 11 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# VMULL scalar
+VMULL_scalar A2 1111 001 u 1 d sz:2 vn:4 vd:3 0 1010 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# VQDMULL scalar
+VQDMULL_scalar A2 1111 0010 1 d sz:2 vn:4 vd:3 0 1011 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
