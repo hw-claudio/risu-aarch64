@@ -154,3 +154,13 @@ VQDMLAL_scalar A2 1111 0010 1 d sz:2 vn:4 vd:3 0 0 op 11 n 1 m 0 vm:4 { ($sz != 
 VMULL_scalar A2 1111 001 u 1 d sz:2 vn:4 vd:3 0 1010 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
 # VQDMULL scalar
 VQDMULL_scalar A2 1111 0010 1 d sz:2 vn:4 vd:3 0 1011 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+
+# Neon saturating add/sub
+# VQADD VQSUB
+# Q=1 case:
+VQADD_a A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0000 n 1 m 1 vm:3 0
+# Q=0:
+VQADD_b A1 1111 001 u 0 d sz:2 vn:4 vd:4 0000 n 0 m 1 vm:4
+# VQSUB
+VQSUB_a A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0010 n 1 m 1 vm:3 0
+VQSUB_b A1 1111 001 u 0 d sz:2 vn:4 vd:4 0010 n 0 m 1 vm:4
