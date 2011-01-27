@@ -164,3 +164,21 @@ VQADD_b A1 1111 001 u 0 d sz:2 vn:4 vd:4 0000 n 0 m 1 vm:4
 # VQSUB
 VQSUB_a A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0010 n 1 m 1 vm:3 0
 VQSUB_b A1 1111 001 u 0 d sz:2 vn:4 vd:4 0010 n 0 m 1 vm:4
+
+# VQ(R)DMULH: vector saturating (rounding) doubling multiply returning high half
+# Q=1 case:
+VQDMULH_a A1 1111 0010 0 d sz:2 vn:3 0 vd:3 0 1011 n 1 m 0 vm:3 0 { ($sz != 3) && ($sz != 0); }
+# Q=0:
+VQDMULH_b A1 1111 0010 0 d sz:2 vn:4 vd:4 1011 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# scalar form Q=1
+VQDMULH_a A2 1111 001 1 1 d sz:2 vn:3 0 vd:3 0 1100 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# scalar, Q=0
+VQDMULH_b A2 1111 001 0 1 d sz:2 vn:4 vd:4 1100 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+
+VQRDMULH_a A1 1111 0011 0 d sz:2 vn:3 0 vd:3 0 1011 n 1 m 0 vm:3 0 { ($sz != 3) && ($sz != 0); }
+# Q=0:
+VQRDMULH_b A1 1111 0011 0 d sz:2 vn:4 vd:4 1011 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# scalar form Q=1
+VQRDMULH_a A2 1111 001 1 1 d sz:2 vn:3 0 vd:3 0 1100 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# scalar, Q=0
+VQRDMULH_b A2 1111 001 0 1 d sz:2 vn:4 vd:4 1101 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
