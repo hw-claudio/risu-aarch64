@@ -182,3 +182,16 @@ VQRDMULH_b A1 1111 0011 0 d sz:2 vn:4 vd:4 1011 n 0 m 0 vm:4 { ($sz != 3) && ($s
 VQRDMULH_a A2 1111 001 1 1 d sz:2 vn:3 0 vd:3 0 1100 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
 # scalar, Q=0
 VQRDMULH_b A2 1111 001 0 1 d sz:2 vn:4 vd:4 1101 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+
+# various preload and hint instructions
+# see table A5-24 for this unallocated hint insn block (must NOP on v7MP)
+UNALLOC_HINT A1 11110 100 x 001 anything:20
+UNALLOC_HINT_b A1 11110 110 x 001 anything:15 0 any:4
+PLI_imm A1 1111 0100 u 101 rn:4 1111 imm:12
+PLI_reg A1 1111 0110 u 101 rn:4 1111 imm:5 type:2 0 rm:4
+PLD_imm A1 1111 0101 u 101 rn:4 1111 imm:12
+PLD_reg A1 1111 0111 u 101 rn:4 1111 imm:5 type:2 0 rm:4
+PLDW_imm A1 1111 0101 u 001 rn:4 1111 imm:12
+PLDW_reg A1 1111 0111 u 001 rn:4 1111 imm:5 type:2 0 rm:4
+# no overlap with PLD_imm because rn can't be 15
+PLD_lit A1 1111 0101 u 101 1111 1111 imm:12
