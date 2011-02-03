@@ -476,11 +476,11 @@ sub parse_config_file($)
                 # fixed bits
                 $bitlen = length($bit);
                 $bitval = oct("0b".$bit);
-            } elsif ($bit =~ /^([a-zA-Z]+):([0-9]+)$/) {
+            } elsif ($bit =~ /^([a-zA-Z][a-zA-Z0-9]*):([0-9]+)$/) {
                 # variable field
                 $var = $1;
                 $bitlen = $2;
-            } elsif($bit =~ /^([a-zA-Z]+)$/) {
+            } elsif($bit =~ /^([a-zA-Z][a-zA-Z0-9]*)$/) {
                 # single bit variable field
                 $var = $1;
                 $bitlen = 1;
