@@ -48,3 +48,8 @@ SMMLS T1 11111 0110 110 rn:4 ra:4 rd:4 000 r rm:4
 # Note that this doesn't overlap with SMMLA because of the implicit
 # constraints on registers fields (ie not 13 or 15)
 SMMUL T1 11111 0110 101 rn:4 1111 rd:4 000 r rm:4
+
+# preload and memory hint space (in the byte and halfword
+# load space, where Rt == 15).
+# The constraint is to avoid UNPREDICTABLE space
+HINTSPACE T1 111 1100 op1:2 0 z 1 y:4 1111 op2:6 any:6 { ($y == 15) || (($op1 & 1) != 0) || !((($op2 & 0x24) == 0x24) || (($op2 & 0x3c) == 0x38)) ; }
