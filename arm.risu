@@ -105,11 +105,11 @@ VQSHL_reg_b A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0100 n 1 m 1 vm:3 0
 # VQSHLU: U==0 is UNDEF so don't generate it
 # Q=1 case: Vd<0> or Vm<0> == 1 => UNDEF, so avoid
 # L:imm6 == 0000xxx => some other insn (we use the custom constraint for this)
-VQSHLU_imm_a A1 1111 001 1 1 d imm:6 vd:3 0 011 0 l 1 m 1 vm:3 0 { ($l == 1) || ($imm & 0xca != 0); }
-VQSHLU_imm_b A1 1111 001 1 1 d imm:6 vd:4 011 0 l 0 m 1 vm:4 { ($l == 1) || ($imm & 0xca != 0); }
+VQSHLU_imm_a A1 1111 001 1 1 d imm:6 vd:3 0 011 0 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
+VQSHLU_imm_b A1 1111 001 1 1 d imm:6 vd:4 011 0 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
 # VQSHL imm: undefs as for VQSHLU except that U==0 is OK
-VQSHL_imm_a A1 1111 001 u 1 d imm:6 vd:3 0 011 1 l 1 m 1 vm:3 0 { ($l == 1) || ($imm & 0xca != 0); }
-VQSHL_imm_b A1 1111 001 u 1 d imm:6 vd:4 011 1 l 0 m 1 vm:4 { ($l == 1) || ($imm & 0xca != 0); }
+VQSHL_imm_a A1 1111 001 u 1 d imm:6 vd:3 0 011 1 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
+VQSHL_imm_b A1 1111 001 u 1 d imm:6 vd:4 011 1 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
 
 # Q=1: UNDEF if lsbit of vn/vd/vm is 1
 VRSQRTS_a A1 1111 0010 0 d 1 0 vn:3 0 vd:3 0 1111 n 1 m 1 vm:3 0
