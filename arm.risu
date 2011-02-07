@@ -195,3 +195,22 @@ PLDW_imm A1 1111 0101 u 001 rn:4 1111 imm:12
 PLDW_reg A1 1111 0111 u 001 rn:4 1111 imm:5 type:2 0 rm:4
 # no overlap with PLD_imm because rn can't be 15
 PLD_lit A1 1111 0101 u 101 1111 1111 imm:12
+
+# VSRA
+# L:imm6 == 0000xxx is some other encoding
+# Q=0
+VSRA_a A1 1111 001 u 1 d imm:6 vd:4 0001 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
+# Q=1
+VSRA_b A1 1111 001 u 1 d imm:6 vd:3 0 0001 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
+
+# VSLI
+# Q=0
+VSLI_a A1 1111 0011 1 d imm:6 vd:4 0101 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
+# Q=1
+VSLI_b A1 1111 0011 1 d imm:6 vd:3 0 0101 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
+
+# VSRI
+# Q=0
+VSRI_a A1 1111 0011 1 d imm:6 vd:4 0100 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
+# Q=1
+VSRI_b A1 1111 0011 1 d imm:6 vd:3 0 0100 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
