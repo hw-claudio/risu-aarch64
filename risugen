@@ -555,7 +555,7 @@ sub main()
     GetOptions( "help" => sub { usage(); exit(0); },
                 "thumb" => \$is_thumb,
                 "numinsns=i" => \$numinsns,
-                "fpscr=i" => \$fpscr,
+                "fpscr=o" => \$fpscr,
                 "pattern=s" => \@pattern_re,
                 "condprob=f" => sub { 
                     $condprob = $_[1];
