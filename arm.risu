@@ -81,15 +81,15 @@ VCVT_neon_b_q1 A1 1111 001 u 1 d 1 imm:5 vd:3 0 111 op 0 1 m 1 vm:3 0
 VCVT_298 A1 cond:4 1110 1 d 11 0111 vd:4 101 sz 1 1 m 0 vm:4
 
 # These three patterns deal with conversions to and from
-# half-precision (16 bit) floats. A8 doesn't have these so
-# the patterns are untested.
+# half-precision (16 bit) floats. A8 doesn't have these; you'll
+# need an A9 as the master to use these.
 
 # we don't generate the sz!=01 UNDEF cases
 # two patterns to avoid the op==1 Vd<0>==1 and op==0 Vm<0>==1 UNDEF cases
-# VCVT_299_a A1 1111 0011 1 d 11 01 10 vd:4 011 0 0 0 m 0 vm:3 0
-# VCVT_299_b A1 1111 0011 1 d 11 01 10 vd:3 0 011 1 0 0 m 0 vm:4
+VCVT_299_a A1 1111 0011 1 d 11 01 10 vd:4 011 0 0 0 m 0 vm:3 0
+VCVT_299_b A1 1111 0011 1 d 11 01 10 vd:3 0 011 1 0 0 m 0 vm:4
 # VCVTB, VCVTT (A8.6.300)
-# VCTV_B_TT A1 cond:4 1110 1 d 11 001 op vd:4 101 0 t 1 m 0 vm:4
+VCTV_B_TT A1 cond:4 1110 1 d 11 001 op vd:4 101 0 t 1 m 0 vm:4
 
 
 ########### VQSHL ########################################
