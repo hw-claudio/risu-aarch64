@@ -229,3 +229,7 @@ VSRI_b A1 1111 0011 1 d imm:6 vd:3 0 0100 l 1 m 1 vm:3 0 { ($l == 1) || (($imm &
 # This includes VMOVL (when shift is 0)
 VSHLL A1 1111 001 u 1 d imm:6 vd:3 0 1010 0 0 m 1 vm:4 { (($imm & 0xc8) != 0); }
 VSHLL A2 1111 0011 1 d 11 sz:2 10 vd:3 0 0011 00 m 0 vm:4 { ($sz != 3); }
+
+# VQMOVN, VQMOVUN
+# includes VMOVN when op=00
+VQMOVN A1 1111 0011 1 d 11 sz:2 10 vd:4 0010 op:2 m 0 vm:3 0 { ($sz != 3); }
