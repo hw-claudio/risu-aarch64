@@ -214,3 +214,15 @@ VSLI_b A1 1111 0011 1 d imm:6 vd:3 0 0101 l 1 m 1 vm:3 0 { ($l == 1) || (($imm &
 VSRI_a A1 1111 0011 1 d imm:6 vd:4 0100 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
 # Q=1
 VSRI_b A1 1111 0011 1 d imm:6 vd:3 0 0100 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
+
+# VSHRN, VQSHRN
+
+# VQSHRN, VQSHRUN
+#VQSHRN A1 1111 001 u 1 d imm:6 vd:4 100 op 0 0 m 1 vm:4 { (($imm & 0xc8) != 0); }
+
+# VQRSHRN, VQRSHRUN
+#VQRSHRN A1 1111 001 u 1 d imm:6 vd:4 100 op 0 1 m 1 vm:4
+
+# VSHRN -- this is the U=0 op=0 case from VQSHRN/VQSHRUN
+#VSHRN A1 1111 0010 1 d imm:6 vd:4 1000 00 m 1 vm:3 0 { (($imm & 0xc8) != 0); }
+
