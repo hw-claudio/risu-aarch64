@@ -450,26 +450,7 @@ sub parse_config_file($)
 {
     # Read in the config file defining the instructions we can generate
     my ($file) = @_;
-    # The format here is:
-    # insnname encodingname bitfield ...
-    # (and we'll have a trailing bit for specifying constraints later)
-    # where each bitfield is either:
-    #  var:sz  specifying a variable field of size sz (sz == 0 if :sz omitted)
-    #  [01]*   specifying fixed bits
-    # Field names beginning 'r' are special as they are assumed to be general
-    # purpose registers. They get an automatic "cannot be 13 or 15" (sp/pc)
-    # constraint.
-    # The optional eval-block at the end of the line (which must be
-    # enclosed in braces) is a perl statement to be evaluated and which
-    # must return true if the generated statement is OK, false if the
-    # generator should retry with a fresh random number. It is evaluated
-    # in a context where variables with the same names as the defined
-    # variable fields are initialised. The intention is that odd cases
-    # where you need to apply some sort of constraint to the generated
-    # instruction can be handled via this mechanism.
-    # NB that there is no sanity checking that you don't do bad things
-    # in the eval block, although there is a basic check for syntax
-    # errors and and we bail out if the constraint returns failure too often.
+    # See the README for details of the format we are parsing here.
 
     # Our data structure here is fairly simple:
     # an assoc array %insn_details whose keys are "insn_enc" strings
