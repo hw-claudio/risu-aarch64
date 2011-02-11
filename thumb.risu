@@ -53,3 +53,13 @@ SMMUL T1 11111 0110 101 rn:4 1111 rd:4 000 r rm:4
 # load space, where Rt == 15).
 # The constraint is to avoid UNPREDICTABLE space
 HINTSPACE T1 111 1100 op1:2 0 z 1 y:4 1111 op2:6 any:6 { ($y == 15) || (($op1 & 1) != 0) || !((($op2 & 0x24) == 0x24) || (($op2 & 0x3c) == 0x38)) ; }
+
+# VMLAL, VMLSL, VQDMLAL, VQDMLSL, VMULL, VQDMULL
+# NB that enc T1 is actually VMLA/VMLS only, T2 is VMLAL/VMLSL only
+VMLAL T2 111 u 1111 1 d sz:2 vn:4 vd:3 0 10 op 0 n 0 m 0 vm:4 { $sz != 3; }
+# VQDMLAL and VQDMLSL (not scalar form)
+VQDLAL T1 1110 1111 1 d sz:2 vn:4 vd:3 0 10 op 1 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# VMULL (excludes the polynomial case!)
+VMULL T2 111 u 1111 1 d sz:2 vn:4 vd:3 0 11 0 0 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+# VQDMULL (not scalar form)
+VQDMULL T1 1110 1111 1 d sz:2 vn:4 vd:3 0 1101 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
