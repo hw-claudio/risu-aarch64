@@ -155,6 +155,14 @@ VMULL_scalar A2 1111 001 u 1 d sz:2 vn:4 vd:3 0 1010 n 1 m 0 vm:4 { ($sz != 3) &
 # VQDMULL scalar
 VQDMULL_scalar A2 1111 0010 1 d sz:2 vn:4 vd:3 0 1011 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
 
+# Polynomial multiply
+# A1: op == 1 (need size == 0 for not UNDEF); q = 0 case
+VMULL_poly_a A1 1111 001 1 0 d 00 vn:4 vd:4 1001 n 0 m 1 vm:4
+# q = 1 case
+VMULL_poly_b A1 1111 001 1 0 d 00 vn:3 0 vd:3 0 1001 n 1 m 1 vm:3 0
+# A2: op == 1 (need U == 0, size == 0 for not UNDEF)
+VMULL_poly A2 1111 001 0 1 d 00 vn:4 vd:3 0 11 1 0 n 0 m 0 vm:4
+
 # Neon saturating add/sub
 # VQADD VQSUB
 # Q=1 case:
