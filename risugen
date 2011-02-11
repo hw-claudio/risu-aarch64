@@ -413,6 +413,39 @@ sub write_test_code($$)
     progress_end();
 }
 
+sub parse_risu_directive($$$)
+{
+    # Parse a line beginning with ".", which is a directive used
+    # to affect how risu/risugen should behave rather than an insn pattern.
+
+    # At the moment we only support one directive:
+    #  .mode modename
+    # where modename can be "arm" or "thumb"
+    my ($file, $seen_pattern, $_) = @_;
+    my ($dirname, @rest) = split;
+    if ($dirname eq ".mode") {
+        if ($seen_pattern != 0) {
+            print STDERR "$file:$.: .mode directive must precede all instruction patterns\n";
+            exit(1);
+        }
+        if ($#rest != 0) {
+            print STDERR "$file:$.: wrong number of arguments to .mode\n";
+            exit(1);
+        }
+        if ($rest[0] eq "thumb") {
+            $is_thumb = 1;
+        } elsif ($rest[0] eq "arm") {
+            $is_thumb = 0;
+        } else {
+            print STDERR "$file:$.: .mode: unknown mode $rest[0]\n";
+            exit(1);
+        }
+    } else {
+        print STDERR "$file:$.: unknown directive $dirname\n";
+        exit(1);
+    }
+}
+
 sub parse_config_file($)
 {
     # Read in the config file defining the instructions we can generate
@@ -443,11 +476,18 @@ sub parse_config_file($)
     # and whose values are array references. Each array is, in order:
     # insnwidth, fixedbits, fixedbitmask, constraint, var,bitpos,mask , var,bitpos,mask ...
 
+    my ($seen_pattern) = 0;
     open(CFILE, $file) or die "can't open $file: $!";
     while (<CFILE>)
     {
         next if /^\s*#/;
         next if /^\s*$/;
+
+        if (/^\./) {
+            parse_risu_directive($file, $seen_pattern, $_);
+            next;
+        }
+        $seen_pattern = 1;
         my ($constraint) = "";
         if (s/^([^{]*)\{(.*)$/$1/) {
             # we have a constraint
@@ -531,7 +571,6 @@ where inputfile is a configuration file specifying instruction patterns
 and outputfile is the generated raw binary file.
 
 Valid options:
-    --thumb      : the instructions in the config file are Thumb, not ARM
     --numinsns n : generate n instructions (default is 10000)
     --fpscr n    : set initial FPSCR value (default is 0)
     --condprob p : make instructions conditional with probability p
@@ -553,7 +592,6 @@ sub main()
     my ($infile, $outfile);
 
     GetOptions( "help" => sub { usage(); exit(0); },
-                "thumb" => \$is_thumb,
                 "numinsns=i" => \$numinsns,
                 "fpscr=o" => \$fpscr,
                 "pattern=s" => \@pattern_re,

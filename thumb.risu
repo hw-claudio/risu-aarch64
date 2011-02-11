@@ -11,6 +11,8 @@
 
 # Input file for risugen defining Thumb instructions
 
+.mode thumb
+
 # The format here is:
 # insnname encodingname bitfield ...
 # (and we'll have a trailing bit for specifying constraints later)
