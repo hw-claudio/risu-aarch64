@@ -421,7 +421,8 @@ sub parse_risu_directive($$$)
     # At the moment we only support one directive:
     #  .mode modename
     # where modename can be "arm" or "thumb"
-    my ($file, $seen_pattern, $_) = @_;
+    my ($file, $seen_pattern);
+    ($file, $seen_pattern, $_) = @_;
     my ($dirname, @rest) = split;
     if ($dirname eq ".mode") {
         if ($seen_pattern != 0) {
