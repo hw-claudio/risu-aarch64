@@ -268,3 +268,12 @@ VZIP_a A1 1111 0011 1 d 11 0 sz 10 vd:4 0001 1 0 m 0 vm:4 { ($d != $m) || ($vd !
 # Q=1 case (sz 11, vd<0> or vm<0> 1 undefs; d == m is UNKNOWN results)
 VZIP_b A1 1111 0011 1 d 11 sz:2 10 vd:3 0 0001 1 1 m 0 vm:3 0 { ($sz != 3) && (($d != $m) || ($vd != $vm)); }
 
+# Q=0
+VRECPE_a A1 1111 0011 1 d 11 10 11 vd:4 010 f 0 0 m 0 vm:4
+# Q=1
+VRECPE_b A1 1111 0011 1 d 11 10 11 vd:3 0 010 f 0 1 m 0 vm:3 0
+
+# Q=0
+VRSQRTE_a A1 1111 0011 1 d 11 10 11 vd:4 010 f 1 0 m 0 vm:4
+# Q=1
+VRSQRTE_b A1 1111 0011 1 d 11 10 11 vd:3 0 010 f 1 1 m 0 vm:3 0
