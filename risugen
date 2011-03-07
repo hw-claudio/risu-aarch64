@@ -25,6 +25,17 @@ my @pattern_re = ();
 
 my $bytecount;
 
+# An instruction pattern as parsed from the config file turns into
+# a record like this:
+#   name          # name of the pattern
+#   width         # 16 or 32
+#   fixedbits     # values of the fixed bits
+#   fixedbitmask  # 1s indicate locations of the fixed bits
+#   constraint    # string, the constraint block, if any
+#   fields        # array of arrays, each element is [ varname, bitpos, bitmask ]
+#
+# We store these in the insn_details hash.
+
 sub open_bin
 {
     my ($fname) = @_;
@@ -244,43 +255,43 @@ sub write_arm_prologue($)
     write_random_register_data();
 }
 
-sub dump_insn_details($@)
+sub dump_insn_details($$)
 {
     # Dump the instruction details for one insn
-    my ($insn, @arr) = @_;
+    my ($insn, $rec) = @_;
     print "insn $insn: ";
-    my $insnwidth = shift @arr;
-    my $fixedbits = shift @arr;
-    my $fixedbitmask = shift @arr;
-    my $constraint = shift @arr;
+    my $insnwidth = $rec->{width};
+    my $fixedbits = $rec->{fixedbits};
+    my $fixedbitmask = $rec->{fixedbitmask};
+    my $constraint = $rec->{constraint};
     print sprintf(" insnwidth %d fixedbits %08x mask %08x ", $insnwidth, $fixedbits, $fixedbitmask);
     if ($constraint ne "") {
         print "constraint $constraint ";
     }
-    for my $k (0 .. @arr /3 - 1) {
-        my ($var, $pos, $mask) = ($arr[3*$k], $arr[3*$k+1],$arr[3*$k+2]);
+    for my $tuple (@{ $rec->{fields} }) {
+        my ($var, $pos, $mask) = @$tuple;
         print "($var, $pos, " . sprintf("%08x", $mask) . ") ";
     }
     print "\n";
 }
 
-sub gen_one_insn($@)
+sub gen_one_insn($$)
 {
     # Given an instruction-details array, generate an instruction
     my $constraintfailures = 0;
 
     INSN: while(1) {
-        my ($forcecond, @arr) = @_;
+        my ($forcecond, $rec) = @_;
         my $insn = int(rand(0xffffffff));
-        my $insnwidth = shift @arr;
-        my $fixedbits = shift @arr;
-        my $fixedbitmask = shift @arr;
-        my $constraint = shift @arr;
+        my $insnwidth = $rec->{width};
+        my $fixedbits = $rec->{fixedbits};
+        my $fixedbitmask = $rec->{fixedbitmask};
+        my $constraint = $rec->{constraint};
 
         $insn &= ~$fixedbitmask;
         $insn |= $fixedbits;
-        for my $k (0 .. @arr /3 - 1) {
-            my ($var, $pos, $mask) = ($arr[3*$k], $arr[3*$k+1],$arr[3*$k+2]);
+        for my $tuple (@{ $rec->{fields} }) {
+            my ($var, $pos, $mask) = @$tuple;
             my $val = ($insn >> $pos) & $mask;
             # Check constraints here:
             # not allowed to use or modify sp or pc
@@ -298,8 +309,8 @@ sub gen_one_insn($@)
             # user-specified constraint: evaluate in an environment
             # with variables set corresponding to the variable fields.
             my $evalstr = "{ ";
-            for my $k (0 .. @arr /3 - 1) {
-                my ($var, $pos, $mask) = ($arr[3*$k], $arr[3*$k+1],$arr[3*$k+2]);
+            for my $tuple (@{ $rec->{fields} }) {
+                my ($var, $pos, $mask) = @$tuple;
                 my $val = ($insn >> $pos) & $mask;
                 $evalstr .= "my (\$$var) = $val; ";
             }
@@ -399,9 +410,9 @@ sub write_test_code($$)
 
     for my $i (1..$numinsns) {
         my $insn_enc = $keys[int rand (@keys)];
-        #dump_insn_details($insn_enc, @{$insn_details{$insn_enc}});
+        #dump_insn_details($insn_enc, $insn_details{$insn_enc});
         my $forcecond = (rand() < $condprob) ? 1 : 0;
-        gen_one_insn($forcecond, @{$insn_details{$insn_enc}});
+        gen_one_insn($forcecond, $insn_details{$insn_enc});
         write_compare();
         # Rewrite the registers periodically. This avoids the tendency
         # for the VFP registers to decay to NaNs and zeroes.
@@ -486,6 +497,9 @@ sub parse_config_file($)
             exit(1);
         }
 
+        my $insnrec = {};
+        my @fields = ();
+
         my $fixedbits = 0;
         my $fixedbitmask = 0;
         my $bitpos = 32;
@@ -522,7 +536,7 @@ sub parse_config_file($)
                 $fixedbits |= ($bitval << $bitpos);
                 $fixedbitmask |= ($bitmask << $bitpos);
             } else {
-                push @{$insn_details{$insnname}}, $var, $bitpos, $bitmask;
+                push @fields, [ $var, $bitpos, $bitmask ];
             }
         }
         if ($bitpos == 16) {
@@ -539,7 +553,13 @@ sub parse_config_file($)
             die "internal error: fixed bits not lined up with mask";
         }
         #  Stick the fixedbit info on the front of the array now we know it
-        unshift @{$insn_details{$insnname}}, $insnwidth, $fixedbits, $fixedbitmask, $constraint;
+        $insnrec->{name} = $insnname;
+        $insnrec->{width} = $insnwidth;
+        $insnrec->{fixedbits} = $fixedbits;
+        $insnrec->{fixedbitmask} = $fixedbitmask;
+        $insnrec->{constraint} = $constraint;
+        $insnrec->{fields} = [ @fields ];
+        $insn_details{$insnname} = $insnrec;
     }
     close(CFILE) or die "can't close $file: $!";
 }
