@@ -44,3 +44,6 @@ VQDLAL T1 1110 1111 1 d sz:2 vn:4 vd:3 0 10 op 1 n 0 m 0 vm:4 { ($sz != 3) && ($
 VMULL T2 111 u 1111 1 d sz:2 vn:4 vd:3 0 11 0 0 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
 # VQDMULL (not scalar form)
 VQDMULL T1 1110 1111 1 d sz:2 vn:4 vd:3 0 1101 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
+
+
+MOVS T2 000 00 00000 rm:3 rd:3
