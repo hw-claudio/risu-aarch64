@@ -15,6 +15,8 @@
 
 use strict;
 use Getopt::Long;
+use Data::Dumper;
+use Text::Balanced qw { extract_bracketed extract_multiple };
 
 my @insns;
 my %insn_details;
@@ -31,7 +33,7 @@ my $bytecount;
 #   width         # 16 or 32
 #   fixedbits     # values of the fixed bits
 #   fixedbitmask  # 1s indicate locations of the fixed bits
-#   constraint    # string, the constraint block, if any
+#   blocks        # hash of blockname->contents (for constraints etc)
 #   fields        # array of arrays, each element is [ varname, bitpos, bitmask ]
 #
 # We store these in the insn_details hash.
@@ -263,7 +265,7 @@ sub dump_insn_details($$)
     my $insnwidth = $rec->{width};
     my $fixedbits = $rec->{fixedbits};
     my $fixedbitmask = $rec->{fixedbitmask};
-    my $constraint = $rec->{constraint};
+    my $constraint = $rec->{blocks}{"constraints"};
     print sprintf(" insnwidth %d fixedbits %08x mask %08x ", $insnwidth, $fixedbits, $fixedbitmask);
     if ($constraint ne "") {
         print "constraint $constraint ";
@@ -286,7 +288,7 @@ sub gen_one_insn($$)
         my $insnwidth = $rec->{width};
         my $fixedbits = $rec->{fixedbits};
         my $fixedbitmask = $rec->{fixedbitmask};
-        my $constraint = $rec->{constraint};
+        my $constraint = $rec->{blocks}{"constraints"};
 
         $insn &= ~$fixedbitmask;
         $insn |= $fixedbits;
@@ -424,7 +426,7 @@ sub write_test_code($$)
     progress_end();
 }
 
-sub parse_risu_directive($$$)
+sub parse_risu_directive($$@)
 {
     # Parse a line beginning with ".", which is a directive used
     # to affect how risu/risugen should behave rather than an insn pattern.
@@ -432,9 +434,7 @@ sub parse_risu_directive($$$)
     # At the moment we only support one directive:
     #  .mode modename
     # where modename can be "arm" or "thumb"
-    my ($file, $seen_pattern);
-    ($file, $seen_pattern, $_) = @_;
-    my ($dirname, @rest) = split;
+    my ($file, $seen_pattern, $dirname, @rest) = @_;
     if ($dirname eq ".mode") {
         if ($seen_pattern != 0) {
             print STDERR "$file:$.: .mode directive must precede all instruction patterns\n";
@@ -458,6 +458,41 @@ sub parse_risu_directive($$$)
     }
 }
 
+sub read_tokenised_line(*)
+{
+    # Read a tokenised line from the config file.
+    # For our purposes, tokens are generally whitespace
+    # separated, but any token beginning with a '{'
+    # continues until we have encountered the matching '}'
+    # (including counting in and out any nested {} within it).
+    # This is also where we deal with blank lines, comments
+    # and line continuation characters.
+    # Any mismatched braces will manifest as a single '{'
+    # or '}' token in the output.
+    my ($fh) = @_;
+    my $line = '';
+    while (<$fh>) {
+        chomp;
+        $line .= $_;
+        next if $line =~ s/\\$//;
+        $line =~ s/#.*$//;
+        next if $line =~ /^\s*$/;
+        last;
+    }
+    #print "got final line:\n";
+    #print "$line\n";
+
+    my (@tokens) = extract_multiple($line,
+                                    [ sub { extract_bracketed($_[0],'{}') },
+                                      qr/([^{} ]+)/,
+                                      qr/([{}]+)/,
+                                    ], undef, 1);
+
+    #print "Tokenised as:\n";
+    #print Dumper(@tokens), "\n";
+    return @tokens;
+}
+
 sub parse_config_file($)
 {
     # Read in the config file defining the instructions we can generate
@@ -470,23 +505,25 @@ sub parse_config_file($)
     # insnwidth, fixedbits, fixedbitmask, constraint, var,bitpos,mask , var,bitpos,mask ...
 
     my ($seen_pattern) = 0;
+    my @tokens;
     open(CFILE, $file) or die "can't open $file: $!";
-    while (<CFILE>)
+    while (@tokens = read_tokenised_line(CFILE))
     {
-        next if /^\s*#/;
-        next if /^\s*$/;
+        if (grep {/^[\{\}]$/} @tokens) {
+            print STDERR "$file:$.: mismatched braces\n";
+            exit(1);
+        }
 
-        if (/^\./) {
-            parse_risu_directive($file, $seen_pattern, $_);
+        if ($tokens[0] =~ /^\./) {
+            parse_risu_directive($file, $seen_pattern, @tokens);
             next;
         }
         $seen_pattern = 1;
-        my ($constraint) = "";
-        if (s/^([^{]*)\{(.*)$/$1/) {
-            # we have a constraint
-            $constraint = "{ " . $2;
-        }
-        my ($insn, $enc, @bits) = split;
+
+        my $insnrec = {};
+        my @fields = ();
+
+        my ($insn, $enc, @bits) = @tokens;
         if (!defined $enc) {
             print STDERR "$file:$.: no insn or encoding?\n";
             exit(1);
@@ -497,18 +534,20 @@ sub parse_config_file($)
             exit(1);
         }
 
-        my $insnrec = {};
-        my @fields = ();
-
         my $fixedbits = 0;
         my $fixedbitmask = 0;
         my $bitpos = 32;
         my $insnwidth = 32;
+        my $constraint = '';
         foreach my $bit (@bits) {
             my $bitlen;
             my $bitval;
             my $var;
-            if ($bit =~ /^[01]*$/) {
+            if ($bit =~ /^{/) {
+                # Constraint block
+                $constraint = $bit;
+                next;
+            } elsif ($bit =~ /^[01]*$/) {
                 # fixed bits
                 $bitlen = length($bit);
                 $bitval = oct("0b".$bit);
@@ -557,7 +596,7 @@ sub parse_config_file($)
         $insnrec->{width} = $insnwidth;
         $insnrec->{fixedbits} = $fixedbits;
         $insnrec->{fixedbitmask} = $fixedbitmask;
-        $insnrec->{constraint} = $constraint;
+        $insnrec->{blocks}{"constraints"} = $constraint;
         $insnrec->{fields} = [ @fields ];
         $insn_details{$insnname} = $insnrec;
     }
