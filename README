@@ -61,22 +61,30 @@ File format
 The .risu file specifies instruction patterns to be tested.
 
 Lines starting with '#' are comments and are ignored.
-Blank lines are ignored.
+Blank lines are ignored. A '\' at the end of the line is 
+a line continuation character.
 
 Lines starting with a '.' are directives to risu/risugen:
  * ".mode [thumb|arm]" specifies whether the file contains ARM
    or Thumb instructions; it must precede all instruction patterns.
 
 Other lines are instruction patterns:
- insnname encodingname bitfield ... [ { eval-block } ]
+ insnname encodingname bitfield ... [ [ !blockname ] { blocktext } ]
 where each bitfield is either:
   var:sz  specifying a variable field of size sz (sz == 0 if :sz omitted)
   [01]*   specifying fixed bits
 Field names beginning 'r' are special as they are assumed to be general
 purpose registers. They get an automatic "cannot be 13 or 15" (sp/pc)
 constraint.
-The optional eval-block at the end of the line (which must be
-enclosed in braces) is a perl statement to be evaluated and which
+
+The optional blocks at the end of the line are generally named;
+an unnamed block is (for backwards compatibility) treated as one
+named "constraints". Currently the following named blocks are
+accepted:
+
+ * constraints :
+
+The block is a perl statement to be evaluated and which
 must return true if the generated statement is OK, false if the
 generator should retry with a fresh random number. It is evaluated
 in a context where variables with the same names as the defined
