@@ -38,6 +38,9 @@ my $bytecount;
 #
 # We store these in the insn_details hash.
 
+# Valid block names (keys in blocks hash)
+my %valid_blockname = ( constraints => 1 );
+
 sub open_bin
 {
     my ($fname) = @_;
@@ -267,7 +270,7 @@ sub dump_insn_details($$)
     my $fixedbitmask = $rec->{fixedbitmask};
     my $constraint = $rec->{blocks}{"constraints"};
     print sprintf(" insnwidth %d fixedbits %08x mask %08x ", $insnwidth, $fixedbits, $fixedbitmask);
-    if ($constraint ne "") {
+    if (defined $constraint) {
         print "constraint $constraint ";
     }
     for my $tuple (@{ $rec->{fields} }) {
@@ -307,7 +310,7 @@ sub gen_one_insn($$)
                 }
             }
         }
-        if ($constraint ne "") {
+        if (defined $constraint) {
             # user-specified constraint: evaluate in an environment
             # with variables set corresponding to the variable fields.
             my $evalstr = "{ ";
@@ -538,14 +541,35 @@ sub parse_config_file($)
         my $fixedbitmask = 0;
         my $bitpos = 32;
         my $insnwidth = 32;
-        my $constraint = '';
-        foreach my $bit (@bits) {
+        my $seenblock = 0;
+
+        while (@bits) {
+            my $bit = shift @bits;
             my $bitlen;
             my $bitval;
             my $var;
-            if ($bit =~ /^{/) {
-                # Constraint block
-                $constraint = $bit;
+
+            if ($bit =~ /^\!/) {
+                # A named block
+                my $blockname = $bit;
+                $blockname =~ s/^!//;
+                my $block = shift @bits;
+                print "blockname $blockname block $block\n";
+                if (!defined $block || $block !~ /^{/) {
+                    print STDERR "$file:$.: expected block following '!$blockname'\n";
+                    exit(1);
+                }
+                if (!$valid_blockname{$blockname}) {
+                    print STDERR "$file:$.: unknown block name '$blockname'\n";
+                    exit(1);
+                }
+                $insnrec->{blocks}{$blockname} = $block;
+                $seenblock++;
+                next;
+            } elsif ($bit =~ /^{/) {
+                # An unnamed block is constraints, for backcompatibility
+                $insnrec->{blocks}{"constraints"} = $bit;
+                $seenblock++;
                 next;
             } elsif ($bit =~ /^[01]*$/) {
                 # fixed bits
@@ -561,6 +585,11 @@ sub parse_config_file($)
                 $bitlen = 1;
             } else {
                 print STDERR "$file:$.: ($insn $enc) unrecognised bitfield specifier $bit\n";
+                exit(1);
+            }
+
+            if ($seenblock) {
+                print STDERR "$file:$.: blocks may not occur in the middle of a pattern\n";
                 exit(1);
             }
 
@@ -596,7 +625,6 @@ sub parse_config_file($)
         $insnrec->{width} = $insnwidth;
         $insnrec->{fixedbits} = $fixedbits;
         $insnrec->{fixedbitmask} = $fixedbitmask;
-        $insnrec->{blocks}{"constraints"} = $constraint;
         $insnrec->{fields} = [ @fields ];
         $insn_details{$insnname} = $insnrec;
     }
