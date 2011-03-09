@@ -89,6 +89,8 @@ sub align4()
 my $OP_COMPARE = 0;        # compare registers
 my $OP_TESTEND = 1;        # end of test, stop
 my $OP_SETMEMBLOCK = 2;    # r0 is address of memory block (8192 bytes)
+my $OP_GETMEMBLOCK = 3;    # add the address of memory block to r0
+my $OP_COMPAREMEM = 4;     # compare memory block
 
 sub write_thumb_risuop($)
 {
@@ -129,6 +131,41 @@ sub write_switch_to_arm()
     align4();
     insn16(0x4778);  # bx pc
     insn16(0xbf00);  # nop
+}
+
+sub write_sub_rrr($$$)
+{
+    my ($rd, $rn, $rm) = @_;
+    if ($is_thumb) {
+        # enc T2
+        insn16(0xeba0 | $rn);
+        insn16(0x0000 | ($rd << 8) | $rm);
+    } else {
+        # enc A1
+        insn32(0xe0400000 | ($rn << 16) | ($rd << 12) | $rm);
+    }
+}
+
+sub write_mov_ri($$)
+{
+    my ($rd, $imm) = @_;
+    # Note that this doesn't allow -ve constants. To do that
+    # we'd need to support more encodings than the simple imm16 ones.
+    die "write_mov_ri: immediate $imm out of range\n" if (($imm & 0xffff0000) != 0);
+    if ($is_thumb) {
+        # enc T3
+        my ($imm4, $i, $imm3, $imm8) = (($imm & 0xf000) >> 12,
+                                        ($imm & 0x0800) >> 11,
+                                        ($imm & 0x0700) >> 8,
+                                        ($imm & 0x00ff));
+        insn16(0xf240 | ($i << 10) | $imm4);
+        insn16(($imm3 << 12) | ($rd << 8) | $imm8);
+    } else {
+        # enc A2
+        my ($imm4, $imm12) = (($imm & 0xf000) >> 12,
+                              ($imm & 0x0fff));
+        insn32(0xe3000000 | ($imm4 << 16) | ($rd << 12) | $imm12);
+    }
 }
 
 sub write_random_double_fpreg()
@@ -312,6 +349,68 @@ sub dump_insn_details($$)
     print "\n";
 }
 
+# Functions used in memory blocks to handle addressing modes.
+# These all have the same basic API: they get called with parameters
+# corresponding to the interesting fields of the instruction,
+# and should generate code to set up the base register to be
+# valid. They must return the register number of the base register.
+# The last (array) parameter lists the registers which are trashed
+# by the instruction (ie which are the targets of the load).
+# This is used to avoid problems when the base reg is a load target.
+sub reg_plus_imm($$@)
+{
+    # Handle reg + immediate addressing mode
+    my ($base, $imm, @trashed) = @_;
+    # Get a random offset within the memory block, of the
+    # right alignment.
+    my $offset = rand(2048) & ~3;
+    write_mov_ri(0, $offset);
+    write_risuop($OP_GETMEMBLOCK);
+    # Now r0 is the address we want to do the access to,
+    # so set the basereg by doing the inverse of the
+    # addressing mode calculation, ie base = r0 - imm
+    # We could do this more cleverly with a sub immediate.
+    if ($base != 0) {
+        write_mov_ri($base, $imm);
+        write_sub_rrr($base, 0, $base);
+        # Clear r0 to avoid register compare mismatches
+        # when the memory block location differs between machines.
+        write_mov_ri(0, 0);
+    } else {
+        # We borrow r1 as a temporary (not a problem
+        # as long as we don't leave anything in a register
+        # which depends on the location of the memory block)
+        write_mov_ri(1, $imm);
+        write_sub_rrr($base, 0, 1);
+    }
+    if (grep $_ == $base, @trashed) {
+        return -1;
+    }
+    return $base;
+}
+
+sub eval_with_fields($$$$) {
+    # Evaluate the given block in an environment with Perl variables
+    # set corresponding to the variable fields for the insn.
+    # Return the result of the eval; we die with a useful error
+    # message in case of syntax error.
+    my ($insn, $rec, $blockname, $block) = @_;
+    my $evalstr = "{ ";
+    for my $tuple (@{ $rec->{fields} }) {
+        my ($var, $pos, $mask) = @$tuple;
+        my $val = ($insn >> $pos) & $mask;
+        $evalstr .= "my (\$$var) = $val; ";
+    }
+    $evalstr .= $block;
+    $evalstr .= "}";
+    my $v = eval $evalstr;
+    if ($@) {
+        print "Syntax error detected evaluating $blockname string:\n$block\n";
+        exit(1);
+    }
+    return $v;
+}
+
 sub gen_one_insn($$)
 {
     # Given an instruction-details array, generate an instruction
@@ -324,6 +423,7 @@ sub gen_one_insn($$)
         my $fixedbits = $rec->{fixedbits};
         my $fixedbitmask = $rec->{fixedbitmask};
         my $constraint = $rec->{blocks}{"constraints"};
+        my $memblock = $rec->{blocks}{"memory"};
 
         $insn &= ~$fixedbitmask;
         $insn |= $fixedbits;
@@ -345,23 +445,11 @@ sub gen_one_insn($$)
         if (defined $constraint) {
             # user-specified constraint: evaluate in an environment
             # with variables set corresponding to the variable fields.
-            my $evalstr = "{ ";
-            for my $tuple (@{ $rec->{fields} }) {
-                my ($var, $pos, $mask) = @$tuple;
-                my $val = ($insn >> $pos) & $mask;
-                $evalstr .= "my (\$$var) = $val; ";
-            }
-            $evalstr .= $constraint;
-            $evalstr .= "}";
-            my $v = eval $evalstr;
-            if ($@) {
-                print "Syntax error detected evaluating constraint string:\n$constraint\n";
-                exit(1);
-            }
+            my $v = eval_with_fields($insn, $rec, "constraints", $constraint);
             if (!$v) {
                 $constraintfailures++;
                 if ($constraintfailures > 10000) {
-                    print "10000 consecutive constraint failures for constraint string:\n$constraint\n";
+                    print "10000 consecutive constraint failures for constraints string:\n$constraint\n";
                     exit (1);
                 }
                 next INSN;
@@ -370,6 +458,16 @@ sub gen_one_insn($$)
 
         # OK, we got a good one
         $constraintfailures = 0;
+
+        my $basereg;
+
+        if (defined $memblock) {
+            # This is a load or store. We simply evaluate the block,
+            # which is expected to be a call to a function which emits
+            # the code to set up the base register and returns the
+            # number of the base register.
+            $basereg = eval_with_fields($insn, $rec, "memory", $memblock);
+        }
 
         if ($is_thumb) {
             # Since the encoding diagrams in the ARM ARM give 32 bit
@@ -387,6 +485,22 @@ sub gen_one_insn($$)
         } else {
             # ARM is simple, always a 32 bit word
             insn32($insn);
+        }
+
+        if (defined $memblock) {
+            # Clean up following a memory access instruction:
+            # we need to turn the (possibly written-back) basereg
+            # into an offset from the base of the memory block,
+            # to avoid making register values depend on memory layout.
+            # $basereg -1 means the basereg was a target of a load
+            # (and so it doesn't contain a memory address after the op)
+            if ($basereg != -1) {
+                write_mov_ri(0, 0);
+                write_risuop($OP_GETMEMBLOCK);
+                write_sub_rrr($basereg, $basereg, 0);
+                write_mov_ri(0, 0);
+            }
+            write_risuop($OP_COMPAREMEM);
         }
         return;
     }
