@@ -88,6 +88,7 @@ sub align4()
 # So the last nibble indicates the desired operation:
 my $OP_COMPARE = 0;        # compare registers
 my $OP_TESTEND = 1;        # end of test, stop
+my $OP_SETMEMBLOCK = 2;    # r0 is address of memory block (8192 bytes)
 
 sub write_thumb_risuop($)
 {
@@ -245,6 +246,28 @@ sub write_random_register_data()
         write_switch_to_thumb();
     }
     write_risuop($OP_COMPARE);
+}
+
+sub write_memblock_setup()
+{
+    # Write code which sets up the memory block for loads and stores.
+    # We just need to set r0 to point to a block of at least 8K length
+    # of random data.
+    if ($is_thumb) {
+        write_switch_to_arm();
+    }
+
+    insn32(0xe28f0004); # add r0, pc, #4
+    write_arm_risuop($OP_SETMEMBLOCK);
+    insn32(0xea000000 + 2047); # b next
+    for (0..2047) {
+        insn32(rand(0xffffffff));
+    }
+    # next:
+
+    if ($is_thumb) {
+        write_switch_to_thumb();
+    }
 }
 
 sub write_arm_prologue($)
@@ -421,6 +444,10 @@ sub write_test_code($$)
     }
     print "Generating code using patterns: @keys...\n";
     progress_start(78, $numinsns);
+
+    if (grep { defined($insn_details{$_}->{blocks}->{"memory"}) } @keys) {
+        write_memblock_setup();
+    }
 
     for my $i (1..$numinsns) {
         my $insn_enc = $keys[int rand (@keys)];
