@@ -95,6 +95,25 @@ NB that there is no sanity checking that you don't do bad things
 in the eval block, although there is a basic check for syntax
 errors and and we bail out if the constraint returns failure too often.
 
+ * memory :
+
+The block indicates what memory address the instruction accesses
+(either load or store). It should be a fragment of perl code which
+is a call to a risugen function which implements support for the
+addressing mode used by the instruction. As with the 'constraints'
+block, the variable field values are provided as Perl variables.
+By convention, the function always accepts as its last argument(s)
+a list of the registers which will be trashed by the function
+(this information is needed to avoid problems handling insns which
+load to their base register.)
+Currently supported addressing modes:
+ reg(reg, trashed);
+ reg_plus_imm(reg, immediate, trashed);
+ reg_minus_imm(reg, immediate, trashed);
+ reg_plus_reg(basereg, indexreg, trashed);
+ reg_plus_reg_shifted(basereg, indexreg, shift, trashed);
+    -- this is for [basereg + indexreg LSL shift]
+
 Implementation details and points to note
 -----------------------------------------
 
