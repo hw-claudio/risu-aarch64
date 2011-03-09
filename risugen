@@ -39,7 +39,7 @@ my $bytecount;
 # We store these in the insn_details hash.
 
 # Valid block names (keys in blocks hash)
-my %valid_blockname = ( constraints => 1 );
+my %valid_blockname = ( constraints => 1, memory => 1 );
 
 sub open_bin
 {
