@@ -146,6 +146,45 @@ sub write_sub_rrr($$$)
     }
 }
 
+# valid shift types
+my $SHIFT_LSL = 0;
+my $SHIFT_LSR = 1;
+my $SHIFT_ASR = 2;
+my $SHIFT_ROR = 3;
+
+sub write_sub_rrrs($$$$$)
+{
+    # sub rd, rn, rm, shifted
+    my ($rd, $rn, $rm, $type, $imm) = @_;
+    $type = $SHIFT_LSL if $imm == 0;
+    if ($imm == 32 && ($type == $SHIFT_LSR || $type == $SHIFT_ASR)) {
+        $imm = 0;
+    }
+    die "write_sub_rrrs: bad shift immediate $imm\n" if $imm < 0 || $imm > 31;
+    if ($is_thumb) {
+        # enc T2
+        my ($imm3, $imm2) = ($imm >> 2, $imm & 3);
+        insn16(0xeba0 | $rn);
+        insn16(($imm3 << 12) | ($rd << 8) | ($imm2 << 6) | ($type << 4) | $rm);
+    } else {
+        # enc A1
+        insn32(0xe0400000 | ($rn << 16) | ($rd << 12) | ($imm << 7) | ($type << 5) | $rm);
+    }
+}
+
+sub write_mov_rr($$)
+{
+    my ($rd, $rm) = @_;
+    if ($is_thumb) {
+        # enc T3
+        insn16(0xea4f);
+        insn16(($rd << 8) | $rm);
+    } else {
+        # enc A1
+        insn32(0xe1a00000 | ($rd << 12) | $rm);
+    }
+}
+
 sub write_mov_ri($$)
 {
     my ($rd, $imm) = @_;
@@ -387,6 +426,49 @@ sub reg_plus_imm($$@)
         return -1;
     }
     return $base;
+}
+
+sub reg_plus_reg_shifted($$$@)
+{
+    # handle reg + reg LSL imm addressing mode
+    my ($base, $idx, $shift, @trashed) = @_;
+    die "reg_plus_reg_shifted: bad shift size\n" if ($shift < 0 || $shift > 3);
+    my $savedidx = 0;
+    if ($idx == 0) {
+        # save the index into some other register for the
+        # moment, because the risuop will trash r0
+        $idx = 1;
+        $idx++ if $idx == $base;
+        $savedidx = 1;
+        write_mov_rr($idx, 0);
+    }
+
+    # Get a random offset within the memory block, of the
+    # right alignment.
+    my $offset = rand(2048) & ~3;
+    write_mov_ri(0, $offset);
+    write_risuop($OP_GETMEMBLOCK);
+    # Now r0 is the address we want to do the access to,
+    # so set the basereg by doing the inverse of the
+    # addressing mode calculation, ie base = r0 - idx LSL imm
+    # LSL x is shift type 0, 
+    write_sub_rrrs($base, 0, $idx, $SHIFT_LSL, $shift);
+    if ($savedidx) {
+        # We can move this back to r0 now
+        write_mov_rr(0, $idx);
+    } elsif ($base != 0) {
+        write_mov_ri(0, 0);
+    }
+    if (grep $_ == $base, @trashed) {
+        return -1;
+    }
+    return $base;
+}
+
+sub reg_plus_reg($$@)
+{
+    my ($base, $idx, @trashed) = @_;
+    return reg_plus_reg_shifted($base, $idx, 0, @trashed);
 }
 
 sub eval_with_fields($$$$) {
