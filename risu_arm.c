@@ -31,6 +31,11 @@ struct reginfo
 
 struct reginfo master_ri, apprentice_ri;
 
+uint8_t apprentice_memblock[MEMBLOCKLEN];
+
+static int mem_used = 0;
+
+
 static int insnsize(ucontext_t *uc)
 {
    /* Return instruction size in bytes of the
@@ -61,15 +66,22 @@ void advance_pc(void *vuc)
    uc->uc_mcontext.arm_pc += insnsize(uc);
 }
 
-static int insn_is_eot_marker(uint32_t insn, int isz)
+static void set_r0(void *vuc, uint32_t r0)
 {
-   if (isz == 2) 
-   {
-      return (insn == 0xdee1);
-   }
-   return (insn == 0xe7fe5af1);
+   ucontext_t *uc = vuc;
+   uc->uc_mcontext.arm_r0 = r0;
 }
 
+static int get_risuop(uint32_t insn, int isz)
+{
+   /* Return the risuop we have been asked to do
+    * (or -1 if this was a SIGILL for a non-risuop insn)
+    */
+   uint32_t op = insn & 0xf;
+   uint32_t key = insn & ~0xf;
+   uint32_t risukey = (isz == 2) ? 0xdee0 : 0xe7fe5af0;
+   return (key != risukey) ? -1 : op;
+}
 
 static void fill_reginfo_vfp(struct reginfo *ri, ucontext_t *uc)
 {
@@ -167,36 +179,84 @@ static void fill_reginfo(struct reginfo *ri, ucontext_t *uc)
 int send_register_info(int sock, void *uc)
 {
    struct reginfo ri;
+   int op;
    fill_reginfo(&ri, uc);
-   return send_data_pkt(sock, &ri, sizeof(ri));
+   op = get_risuop(ri.faulting_insn, ri.faulting_insn_size);
+
+   switch (op)
+   {
+      case OP_COMPARE:
+      case OP_TESTEND:
+      default:
+         /* Do a simple register compare on (a) explicit request
+          * (b) end of test (c) a non-risuop UNDEF
+          */
+         return send_data_pkt(sock, &ri, sizeof(ri));
+      case OP_SETMEMBLOCK:
+         memblock = (uint8_t*)ri.gpreg[0];
+         break;
+      case OP_GETMEMBLOCK:
+         set_r0(uc, ri.gpreg[0] + (uint32_t)memblock);
+         break;
+      case OP_COMPAREMEM:
+         return send_data_pkt(sock, memblock, MEMBLOCKLEN);
+         break;
+   }
+   return 0;
 }
 
 /* Read register info from the socket and compare it with that from the
  * ucontext. Return 0 for match, 1 for end-of-test, 2 for mismatch.
  * NB: called from a signal handler.
+ *
+ * We don't have any kind of identifying info in the incoming data
+ * that says whether it's register or memory data, so if the two
+ * sides get out of sync then we will fail obscurely.
  */
 int recv_and_compare_register_info(int sock, void *uc)
 {
-   int resp;
+   int resp = 0, op;
 
    fill_reginfo(&master_ri, uc);
-   recv_data_pkt(sock, &apprentice_ri, sizeof(apprentice_ri));
-   if (memcmp(&master_ri, &apprentice_ri, sizeof(master_ri)) != 0)
+   op = get_risuop(master_ri.faulting_insn, master_ri.faulting_insn_size);
+
+   switch (op)
    {
-      /* mismatch */
-      resp = 2;
+      case OP_COMPARE:
+      case OP_TESTEND:
+      default:
+         /* Do a simple register compare on (a) explicit request
+          * (b) end of test (c) a non-risuop UNDEF
+          */
+         recv_data_pkt(sock, &apprentice_ri, sizeof(apprentice_ri));
+         if (memcmp(&master_ri, &apprentice_ri, sizeof(master_ri)) != 0)
+         {
+            /* register mismatch */
+            resp = 2;
+         }
+         else if (op == OP_TESTEND)
+         {
+            resp = 1;
+         }
+         send_response_byte(sock, resp);
+         break;
+      case OP_SETMEMBLOCK:
+         memblock = (uint8_t*)master_ri.gpreg[0];
+         break;
+      case OP_GETMEMBLOCK:
+         set_r0(uc, master_ri.gpreg[0] + (uint32_t)memblock);
+         break;
+      case OP_COMPAREMEM:
+         mem_used = 1;
+         recv_data_pkt(sock, apprentice_memblock, MEMBLOCKLEN);
+         if (memcmp(memblock, apprentice_memblock, MEMBLOCKLEN) != 0)
+         {
+            /* memory mismatch */
+            resp = 2;
+         }
+         send_response_byte(sock, resp);
+         break;
    }
-   else if (insn_is_eot_marker(master_ri.faulting_insn, master_ri.faulting_insn_size))
-   {
-      /* end of test */
-      resp = 1;
-   }
-   else
-   {
-      /* either successful match or expected undef */
-      resp = 0;
-   }
-   send_response_byte(sock, resp);
    return resp;
 }
 
@@ -256,19 +316,28 @@ static void report_mismatch_detail(struct reginfo *m, struct reginfo *a)
  */
 int report_match_status(void)
 {
+   int resp = 0;
    fprintf(stderr, "match status...\n");
    fprintf(stderr, "master reginfo:\n");
    dump_reginfo(&master_ri);
    fprintf(stderr, "apprentice reginfo:\n");
    dump_reginfo(&apprentice_ri);
-   if (memcmp(&master_ri, &apprentice_ri, sizeof(master_ri)) == 0)
+   if (memcmp(&master_ri, &apprentice_ri, sizeof(master_ri)) != 0)
+   {
+      fprintf(stderr, "mismatch on regs!\n");
+      resp = 1;
+   }
+   if (mem_used && memcmp(memblock, &apprentice_memblock, MEMBLOCKLEN) != 0)
+   {
+      fprintf(stderr, "mismatch on memory!\n");
+      resp = 1;
+   }
+   if (!resp) 
    {
       fprintf(stderr, "match!\n");
       return 0;
    }
-   fprintf(stderr, "mismatch!\n");
+
    report_mismatch_detail(&master_ri, &apprentice_ri);
-   return 1;
+   return resp;
 }
-
-

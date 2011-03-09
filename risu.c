@@ -27,6 +27,9 @@
 
 #include "risu.h"
 
+uint8_t *memblock = 0;
+
+
 typedef void sighandler_fn_t(int sig, siginfo_t *si, void *vuc);
 
 sighandler_fn_t master_sigill, apprentice_sigill;

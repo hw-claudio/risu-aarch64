@@ -23,6 +23,18 @@ void send_response_byte(int sock, int resp);
 
 extern uint32_t image_start_address;
 
+extern uint8_t *memblock;
+
+/* Ops code under test can request from risu: */
+#define OP_COMPARE 0
+#define OP_TESTEND 1
+#define OP_SETMEMBLOCK 2
+#define OP_GETMEMBLOCK 3
+#define OP_COMPAREMEM 4
+
+/* The memory block should be this long */
+#define MEMBLOCKLEN 8192
+
 /* Interface provided by CPU-specific code: */
 
 /* Send the register information from the struct ucontext down the socket.
