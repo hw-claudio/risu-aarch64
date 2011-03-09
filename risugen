@@ -82,23 +82,32 @@ sub align4()
 # 'e5a' just in case the space is being used by somebody
 # else too.
 
-# For Thumb the equivalent space is 0xDExx.
+# For Thumb the equivalent space is 0xDExx
+# and we use 0xDEEx.
 
-sub write_test_end()
+# So the last nibble indicates the desired operation:
+my $OP_COMPARE = 0;        # compare registers
+my $OP_TESTEND = 1;        # end of test, stop
+
+sub write_thumb_risuop($)
 {
-    if ($is_thumb) {
-        insn16(0xdee1);
-    } else {
-        insn32(0xe7fe5af1);
-    }
+    my ($op) = @_;
+    insn16(0xdee0 | $op);
 }
 
-sub write_compare()
+sub write_arm_risuop($)
 {
+    my ($op) = @_;
+    insn32(0xe7fe5af0 | $op);
+}
+
+sub write_risuop($)
+{
+    my ($op) = @_;
     if ($is_thumb) {
-        insn16(0xdee0);
+        write_thumb_risuop($op);
     } else {
-        insn32(0xe7fe5af0);
+        write_arm_risuop($op);
     }
 }
 
@@ -235,7 +244,7 @@ sub write_random_register_data()
     if ($is_thumb) {
         write_switch_to_thumb();
     }
-    write_compare();
+    write_risuop($OP_COMPARE);
 }
 
 sub write_arm_prologue($)
@@ -418,7 +427,7 @@ sub write_test_code($$)
         #dump_insn_details($insn_enc, $insn_details{$insn_enc});
         my $forcecond = (rand() < $condprob) ? 1 : 0;
         gen_one_insn($forcecond, $insn_details{$insn_enc});
-        write_compare();
+        write_risuop($OP_COMPARE);
         # Rewrite the registers periodically. This avoids the tendency
         # for the VFP registers to decay to NaNs and zeroes.
         if (($i % 100) == 0) {
@@ -695,7 +704,7 @@ sub main()
     open_bin($outfile);
     write_arm_prologue($fpscr);
     write_test_code($condprob, $numinsns);
-    write_test_end();
+    write_risuop($OP_TESTEND);
     close_bin();
     return 0;
 }
