@@ -185,26 +185,34 @@ sub write_mov_rr($$)
     }
 }
 
-sub write_mov_ri($$)
+sub write_mov_ri16($$$)
 {
-    my ($rd, $imm) = @_;
-    # Note that this doesn't allow -ve constants. To do that
-    # we'd need to support more encodings than the simple imm16 ones.
-    die "write_mov_ri: immediate $imm out of range\n" if (($imm & 0xffff0000) != 0);
+    # Write 16 bits of immediate to register, using either MOVW or MOVT
+    my ($rd, $imm, $is_movt) = @_;
+    die "write_mov_ri16: immediate $imm out of range\n" if (($imm & 0xffff0000) != 0);
     if ($is_thumb) {
         # enc T3
         my ($imm4, $i, $imm3, $imm8) = (($imm & 0xf000) >> 12,
                                         ($imm & 0x0800) >> 11,
                                         ($imm & 0x0700) >> 8,
                                         ($imm & 0x00ff));
-        insn16(0xf240 | ($i << 10) | $imm4);
+        insn16(0xf240 | ($is_movt << 7) | ($i << 10) | $imm4);
         insn16(($imm3 << 12) | ($rd << 8) | $imm8);
     } else {
         # enc A2
         my ($imm4, $imm12) = (($imm & 0xf000) >> 12,
                               ($imm & 0x0fff));
-        insn32(0xe3000000 | ($imm4 << 16) | ($rd << 12) | $imm12);
+        insn32(0xe3000000 | ($is_movt << 22) | ($imm4 << 16) | ($rd << 12) | $imm12);
     }
+}
+
+sub write_mov_ri($$)
+{
+    # We always use a MOVW/MOVT pair, for simplicity
+    my ($rd, $imm) = @_;
+    write_mov_ri16($rd, ($imm & 0xffff), 0);
+    my $highhalf = ($imm >> 16) & 0xffff;
+    write_mov_ri16($rd, $highhalf, 1) if $highhalf;
 }
 
 sub write_random_double_fpreg()
@@ -446,6 +454,12 @@ sub reg_plus_imm($$@)
         return -1;
     }
     return $base;
+}
+
+sub reg_minus_imm($$@)
+{
+    my ($base, $imm, @trashed) = @_;
+    return reg_plus_imm($base, -$imm, @trashed);
 }
 
 sub reg_plus_reg_shifted($$$@)
