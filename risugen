@@ -531,6 +531,15 @@ sub parse_config_file($)
             print STDERR "$file:$.: no insn or encoding?\n";
             exit(1);
         }
+        if ($insn !~ /^[A-Za-z0-9][A-Za-z0-9_]*$/) {
+            print STDERR "$file:$.: invalid insn name $insn ";
+            print STDERR "(possibly missing line continuation character?)\n";
+            exit(1);
+        }
+        if ($enc !~ /^[A-Za-z0-9][A-Za-z0-9_]*$/) {
+            print STDERR "$file:$.: invalid encoding name $enc\n";
+            exit(1);
+        }
         my $insnname = "${insn} ${enc}";
         if (exists $insn_details{$insnname}) {
             print STDERR "$file:$.: redefinition of $insnname\n";
