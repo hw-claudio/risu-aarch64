@@ -47,3 +47,361 @@ VQDMULL T1 1110 1111 1 d sz:2 vn:4 vd:3 0 1101 n 0 m 0 vm:4 { ($sz != 3) && ($sz
 
 
 MOVS T2 000 00 00000 rm:3 rd:3
+
+
+##############################################################################
+# Loads and stores
+##############################################################################
+
+# Not supported:
+#  * PC-relative loads and stores (risu limitation)
+#  * load/store exclusive (side effects too hard to test with risu)
+#  * ldc/stc/ldc2/stc2 (risu doesn't know about copro registers)
+# Not yet encoded in this file (but should be doable):
+#  * load/store multiple
+#  * ldrd/strd
+#  * neon and VFP loads and stores
+
+# from table A6-18:
+# LDR (imm, thumb)
+LDR_imm T1 01101 imm:5 rn:3 rt:3 \
+   !memory { reg_plus_imm($rn, $imm << 2, $rt); }
+
+# LDR_imm encoding T2 is sp-relative loads, not supported by risu
+
+LDR_imm T3 11111 000 1101 rn:4 rt:4 imm:12 \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# T4, W=0 case: P=0 UNDEF, P=1 U=1 is LDRT, so PUW=100 is only option (plain negative offset)
+LDR_imm T4a 11111 000 0101 rn:4 rt:4 1 1 0 0 imm:8 \
+   !memory { reg_minus_imm($rn, $imm, $rt); }
+# T4, P=0 W=0 : UNDEF ; note that we mustn't have a !memory block for this
+LDR_imm T4b 11111 000 0101 rn:4 rt:4 1 0 u 0 imm:8
+
+# T4, W=1 case: rn == rt is unpredictable. We have to
+# split out the various subcase of P and U because the
+# addressing modes are different
+# P=U=0 : post-indexed, negative
+LDR_imm T4c 11111 000 0101 rn:4 rt:4 1 0 0 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg_minus_imm($rn, $imm, $rt); }
+# P=0,U=1 : postindexed, positive
+LDR_imm T4d 11111 000 0101 rn:4 rt:4 1 0 1 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+# P=1 : preindexed
+LDR_imm T4e 11111 000 0101 rn:4 rt:4 1 1 u 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg($rn, $rt); }
+
+# LDRT
+LDRT T1 11111 000 0101 rn:4 rt:4 1110 imm:8 \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# LDR (reg)
+# The constraint that base and index registers be different
+# isn't imposed by the architecture but by risugen.
+LDR T1 0101 100 rm:3 rn:3 rt:3 \
+   !constraints { $rm != $rn; } \
+   !memory { reg_plus_reg($rn, $rm, $rt); }
+LDR T2 11111 000 0101 rn:4 rt:4 0 00000 imm:2 rm:4 \
+   !constraints { $rm != $rn; } \
+   !memory { reg_plus_reg_shifted($rn, $rm, $imm, $rt); }
+
+# LDR (literal)
+# risugen doesn't support pc-relative loads/stores yet.
+
+# A6-19
+# LDRH (lit) -- pc-relative addressing not supported
+# LDRH (imm, thumb)
+LDRH_imm T1 10001 imm:5 rn:3 rt:3 \
+   !memory { reg_plus_imm($rn, $imm << 2, $rt); }
+
+LDRH_imm T2 11111 000 1011 rn:4 rt:4 imm:12 \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# T3, W=0 case: P=0 UNDEF, P=1 U=1 is LDRHT, so PUW=100 is only option (plain negative offset)
+LDRH_imm T3a 11111 000 0011 rn:4 rt:4 1 1 0 0 imm:8 \
+   !memory { reg_minus_imm($rn, $imm, $rt); }
+# T3, P=0 W=0 : UNDEF ; note that we mustn't have a !memory block for this
+LDRH_imm T3b 11111 000 0011 rn:4 rt:4 1 0 u 0 imm:8
+
+# T3, W=1 case: rn == rt is unpredictable. We have to
+# split out the various subcase of P and U because the
+# addressing modes are different
+# P=U=0 : post-indexed, negative
+LDRH_imm T3c 11111 000 0011 rn:4 rt:4 1 0 0 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg_minus_imm($rn, $imm, $rt); }
+# P=0,U=1 : postindexed, positive
+LDRH_imm T3d 11111 000 0011 rn:4 rt:4 1 0 1 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+# P=1 : preindexed
+LDRH_imm T3e 11111 000 0011 rn:4 rt:4 1 1 u 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg($rn, $rt); }
+
+# LDRHT
+LDRHT T1 11111 000 0011 rn:4 rt:4 1110 imm:8 \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# LDRH (reg)
+# The constraint that base and index registers be different
+# isn't imposed by the architecture but by risugen.
+LDRH T1 0101 101 rm:3 rn:3 rt:3 \
+   !constraints { $rm != $rn; } \
+   !memory { reg_plus_reg($rn, $rm, $rt); }
+LDRH T2 11111 000 0011 rn:4 rt:4 0 00000 imm:2 rm:4 \
+   !constraints { $rm != $rn; } \
+   !memory { reg_plus_reg_shifted($rn, $rm, $imm, $rt); }
+
+# LDRSH (imm)
+LDRSH_imm T1 11111 001 1011 rn:4 rt:4 imm:12 \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+# W=0 case: PUW=100 (others are UNDEF or LDRSHT)
+LDRSH_imm T2a 11111 001 0011 rn:4 rt:4 1 1 0 0 imm:8 \
+   !memory { reg_minus_imm($rn, $imm, $rt); }
+# W=0 P=0 UNDEF case
+LDRSH_imm T2b 11111 001 0011 rn:4 rt:4 1 0 u 0 imm:8
+
+# T3, W=1 case: rn == rt is unpredictable. We have to
+# split out the various subcase of P and U because the
+# addressing modes are different
+# P=U=0 : post-indexed, negative
+LDRSH_imm T2c 11111 001 0011 rn:4 rt:4 1 0 0 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg_minus_imm($rn, $imm, $rt); }
+# P=0,U=1 : postindexed, positive
+LDRSH_imm T2d 11111 001 0011 rn:4 rt:4 1 0 1 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+# P=1 : preindexed
+LDRSH_imm T2e 11111 001 0011 rn:4 rt:4 1 1 u 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg($rn, $rt); }
+
+# LDRSHT
+LDRSHT T1  11111 001 0011 rn:4 rt:4 1110 imm:8 \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# LDRSH (reg)
+LDRSH T1 0101 111 rm:3 rn:3 rt:3 \
+   !constraints { $rm != $rn; } \
+   !memory { reg_plus_reg($rn, $rm, $rt); }
+LDRSH T2 11111 001 0011 rn:4 rt:4 0 00000 imm:2 rm:4 \
+   !constraints { $rm != $rn; } \
+   !memory { reg_plus_reg_shifted($rn, $rm, $imm, $rt); }
+
+# A6-20
+# LDRB (lit) -- pc-relative addressing not supported
+# LDRB (imm, thumb)
+LDRB_imm T1 01111 imm:5 rn:3 rt:3 \
+   !memory { reg_plus_imm($rn, $imm << 2, $rt); }
+
+LDRB_imm T2 11111 000 1001 rn:4 rt:4 imm:12 \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# T3, W=0 case: P=0 UNDEF, P=1 U=1 is LDRBT, so PUW=100 is only option (plain negative offset)
+LDRB_imm T3a 11111 000 0001 rn:4 rt:4 1 1 0 0 imm:8 \
+   !memory { reg_minus_imm($rn, $imm, $rt); }
+# T3, P=0 W=0 : UNDEF ; note that we mustn't have a !memory block for this
+LDRB_imm T3b 11111 000 0001 rn:4 rt:4 1 0 u 0 imm:8
+
+# T3, W=1 case: rn == rt is unpredictable. We have to
+# split out the various subcase of P and U because the
+# addressing modes are different
+# P=U=0 : post-indexed, negative
+LDRB_imm T3c 11111 000 0001 rn:4 rt:4 1 0 0 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg_minus_imm($rn, $imm, $rt); }
+# P=0,U=1 : postindexed, positive
+LDRB_imm T3d 11111 000 0001 rn:4 rt:4 1 0 1 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+# P=1 : preindexed
+LDRB_imm T3e 11111 000 0001 rn:4 rt:4 1 1 u 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg($rn, $rt); }
+
+# LDRBT
+LDRBT T1 11111 000 0001 rn:4 rt:4 1110 imm:8 \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# LDRB (reg)
+# The constraint that base and index registers be different
+# isn't imposed by the architecture but by risugen.
+LDRB T1 0101 110 rm:3 rn:3 rt:3 \
+   !constraints { $rm != $rn; } \
+   !memory { reg_plus_reg($rn, $rm, $rt); }
+LDRB T2 11111 0000 001 rn:4 rt:4 0 00000 imm:2 rm:4 \
+   !constraints { $rm != $rn; } \
+   !memory { reg_plus_reg_shifted($rn, $rm, $imm, $rt); }
+
+# LDRSB (imm)
+LDRSB_imm T1 11111 001 1001 rn:4 rt:4 imm:12 \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+# W=0 case: PUW=100 (others are UNDEF or LDRSBT)
+LDRSB_imm T2a 11111 001 0001 rn:4 rt:4 1 1 0 0 imm:8 \
+   !memory { reg_minus_imm($rn, $imm, $rt); }
+# W=0 P=0 UNDEF case
+LDRSB_imm T2b 11111 001 0001 rn:4 rt:4 1 0 u 0 imm:8
+
+# T3, W=1 case: rn == rt is unpredictable. We have to
+# split out the various subcase of P and U because the
+# addressing modes are different
+# P=U=0 : post-indexed, negative
+LDRSB_imm T2c 11111 001 0001 rn:4 rt:4 1 0 0 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg_minus_imm($rn, $imm, $rt); }
+# P=0,U=1 : postindexed, positive
+LDRSB_imm T2d 11111 001 0001 rn:4 rt:4 1 0 1 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+# P=1 : preindexed
+LDRSB_imm T2e 11111 001 0001 rn:4 rt:4 1 1 u 1 imm:8 \
+   !constraints { $rn != $rt } \
+   !memory { reg($rn, $rt); }
+
+# LDRSBT
+LDRSBT T1  11111 001 0001 rn:4 rt:4 1110 imm:8 \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# LDRSB (reg)
+LDRSB T1 0101 011 rm:3 rn:3 rt:3 \
+   !constraints { $rm != $rn; } \
+   !memory { reg_plus_reg($rn, $rm, $rt); }
+LDRSB T2 11111 001 0001 rn:4 rt:4 0 00000 imm:2 rm:4 \
+   !constraints { $rm != $rn; } \
+   !memory { reg_plus_reg_shifted($rn, $rm, $imm, $rt); }
+
+# A6-21 -- stores
+# Note that constraints that we can't store the basereg
+# are imposed by risu/risugen, not by the architecture.
+
+# STRB (imm, thumb)
+STRB_imm T1 01110 imm:5 rn:3 rt:3 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm << 2); }
+STRB_imm T2 11111 000 1000 rn:4 rt:4 imm:12 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm); }
+# PUW=110 is STRBT and PUW=0x0 is UNDEF, so W=0 means PUW=100
+STRB_imm T3a 11111 000 0000 rn:4 rt:4 1 1 0 0 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_minus_imm($rn, $imm); }
+# PUW=0x0 undef case
+STRB_imm T3b 11111 000 0000 rn:4 rt:4 1 0 u 0 imm:8
+# Writeback cases: rn==rt is unpredictable here
+# P=U=0 : postindexed, negative
+STRB_imm T3c 11111 000 0000 rn:4 rt:4 1 0 0 1 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_minus_imm($rn, $imm); }
+# P=0,U=1 : postindexed, positive
+STRB_imm T3d 11111 000 0000 rn:4 rt:4 1 0 1 1 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm); }
+# P=1 : preindexed
+STRB_imm T3e 11111 000 0000 rn:4 rt:4 1 1 u 1 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg($rn); }
+
+# STRBT
+STRBT T1 11111 000 0000 rn:4 rt:4 1110 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# STRB (reg)
+STRB T1 0101 010 rm:3 rn:3 rt:3 \
+   !constraints { $rn != $rt && $rn != $rm; } \
+   !memory { reg_plus_reg($rn, $rm); }
+# both the constraints here are risugen-imposed, not architectural
+STRB T2 11111 000 0000 rn:4 rt:4 000000 imm:2 rm:4 \
+   !constraints { $rn != $rt && $rm != $rn; } \
+   !memory { reg_plus_reg_shifted($rn, $rm, $imm); }
+
+
+# STRH (imm, thumb)
+STRH_imm T1 10000 imm:5 rn:3 rt:3 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm << 2); }
+STRH_imm T2 11111 000 1010 rn:4 rt:4 imm:12 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm); }
+# PUW=110 is STRHT and PUW=0x0 is UNDEF, so W=0 means PUW=100
+STRH_imm T3a 11111 000 0010 rn:4 rt:4 1 1 0 0 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_minus_imm($rn, $imm); }
+# PUW=0x0 undef case
+STRH_imm T3b 11111 000 0010 rn:4 rt:4 1 0 u 0 imm:8
+# Writeback cases: rn==rt is unpredictable here
+# P=U=0 : postindexed, negative
+STRH_imm T3c 11111 000 0010 rn:4 rt:4 1 0 0 1 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_minus_imm($rn, $imm); }
+# P=0,U=1 : postindexed, positive
+STRH_imm T3d 11111 000 0010 rn:4 rt:4 1 0 1 1 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm); }
+# P=1 : preindexed
+STRH_imm T3e 11111 000 0010 rn:4 rt:4 1 1 u 1 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg($rn); }
+
+# STRHT
+STRHT T1 11111 000 0010 rn:4 rt:4 1110 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# STRH (reg)
+STRH T1 0101 001 rm:3 rn:3 rt:3 \
+   !constraints { $rn != $rt && $rn != $rm; } \
+   !memory { reg_plus_reg($rn, $rm); }
+# both the constraints here are risugen-imposed, not architectural
+STRH T2 11111 000 0010 rn:4 rt:4 000000 imm:2 rm:4 \
+   !constraints { $rn != $rt && $rm != $rn; } \
+   !memory { reg_plus_reg_shifted($rn, $rm, $imm); }
+
+# STR (imm, thumb)
+STR_imm T1 01100 imm:5 rn:3 rt:3 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm << 2); }
+# STR imm T2 is sp-relative
+STR_imm T3 11111 000 1100 rn:4 rt:4 imm:12 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm); }
+# PUW=110 is STRT and PUW=0x0 is UNDEF, so W=0 means PUW=100
+STR_imm T4a 11111 000 0100 rn:4 rt:4 1 1 0 0 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_minus_imm($rn, $imm); }
+# PUW=0x0 undef case
+STR_imm T4b 11111 000 0100 rn:4 rt:4 1 0 u 0 imm:8
+# Writeback cases: rn==rt is unpredictable here
+# P=U=0 : postindexed, negative
+STR_imm T4c 11111 000 0100 rn:4 rt:4 1 0 0 1 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_minus_imm($rn, $imm); }
+# P=0,U=1 : postindexed, positive
+STR_imm T4d 11111 000 0100 rn:4 rt:4 1 0 1 1 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm); }
+# P=1 : preindexed
+STR_imm T4e 11111 000 0100 rn:4 rt:4 1 1 u 1 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg($rn); }
+
+# STRT
+STRT T1 11111 000 0100 rn:4 rt:4 1110 imm:8 \
+   !constraints { $rn != $rt; } \
+   !memory { reg_plus_imm($rn, $imm, $rt); }
+
+# STR (reg)
+STR T1 0101 000 rm:3 rn:3 rt:3 \
+   !constraints { $rn != $rt && $rn != $rm; } \
+   !memory { reg_plus_reg($rn, $rm); }
+# both the constraints here are risugen-imposed, not architectural
+STR T2 11111 000 0100 rn:4 rt:4 000000 imm:2 rm:4 \
+   !constraints { $rn != $rt && $rm != $rn; } \
+   !memory { reg_plus_reg_shifted($rn, $rm, $imm); }
+
+##############################################################################
