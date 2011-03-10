@@ -396,6 +396,26 @@ sub dump_insn_details($$)
 # The last (array) parameter lists the registers which are trashed
 # by the instruction (ie which are the targets of the load).
 # This is used to avoid problems when the base reg is a load target.
+sub reg($@)
+{
+    my ($base, @trashed) = @_;
+    # Get a random offset within the memory block, of the
+    # right alignment.
+    my $offset = rand(2048) & ~3;
+    write_mov_ri(0, $offset);
+    write_risuop($OP_GETMEMBLOCK);
+    # Now r0 is the address we want to do the access to,
+    # so just move it into the basereg
+    if ($base != 0) {
+        write_mov_rr($base, 0);
+        write_mov_ri(0, 0);
+    }
+    if (grep $_ == $base, @trashed) {
+        return -1;
+    }
+    return $base;
+}
+
 sub reg_plus_imm($$@)
 {
     # Handle reg + immediate addressing mode
