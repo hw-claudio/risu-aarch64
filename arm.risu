@@ -277,3 +277,16 @@ VRECPE_b A1 1111 0011 1 d 11 10 11 vd:3 0 010 f 0 1 m 0 vm:3 0
 VRSQRTE_a A1 1111 0011 1 d 11 10 11 vd:4 010 f 1 0 m 0 vm:4
 # Q=1
 VRSQRTE_b A1 1111 0011 1 d 11 10 11 vd:3 0 010 f 1 1 m 0 vm:3 0
+
+
+# Unsigned saturating add/subtract
+# UQADD16, UQSUB16, UQADD8, UQSUB8
+UQADD16 A1 cond:4 01100110 rn:4 rd:4 1111 0001 rm:4
+UQADD8 A1 cond:4 01100110 rn:4 rd:4 1111 1001 rm:4
+UQSUB16 A1 cond:4 01100110 rn:4 rd:4 1111 0111 rm:4
+UQSUB8 A1 cond:4 01100110 rn:4 rd:4 1111 1111 rm:4
+# Signed ditto
+QADD16 A1 cond:4 01100010 rn:4 rd:4 1111 0001 rm:4
+QADD8 A1 cond:4 01100010 rn:4 rd:4 1111 1001 rm:4
+QSUB16 A1 cond:4 01100010 rn:4 rd:4 1111 0111 rm:4
+QSUB8 A1 cond:4 01100010 rn:4 rd:4 1111 1111 rm:4
