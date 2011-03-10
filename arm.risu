@@ -290,3 +290,17 @@ QADD16 A1 cond:4 01100010 rn:4 rd:4 1111 0001 rm:4
 QADD8 A1 cond:4 01100010 rn:4 rd:4 1111 1001 rm:4
 QSUB16 A1 cond:4 01100010 rn:4 rd:4 1111 0111 rm:4
 QSUB8 A1 cond:4 01100010 rn:4 rd:4 1111 1111 rm:4
+
+# Signed parallel add/subtract
+SADD8 A1 cond:4 0110 0001 rn:4 rd:4 1111 1001 rm:4
+SADD16 A1 cond:4 0110 0001 rn:4 rd:4 1111 0001 rm:4
+SSUB8 A1 cond:4 0110 0001 rn:4 rd:4 1111 1111 rm:4
+SSUB16 A1 cond:4 0110 0001 rn:4 rd:4 1111 0111 rm:4
+# unsigned ditto
+UADD8 A1 cond:4 0110 0101 rn:4 rd:4 1111 1001 rm:4
+UADD16 A1 cond:4 0110 0101 rn:4 rd:4 1111 0001 rm:4
+USUB8 A1 cond:4 0110 0101 rn:4 rd:4 1111 1111 rm:4
+USUB16 A1 cond:4 0110 0101 rn:4 rd:4 1111 0111 rm:4
+
+SASX A1 cond:4 0110 0001 rn:4 rd:4 1111 0011 rm:4
+SSAX A1 cond:4 0110 0001 rn:4 rd:4 1111 0101 rm:4
