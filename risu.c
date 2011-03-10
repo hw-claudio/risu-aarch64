@@ -105,8 +105,11 @@ void load_image(const char *imgfile)
    }
    size_t len = st.st_size;
    void *addr;
-   
-   addr = mmap(0, len, PROT_READ|PROT_EXEC, MAP_PRIVATE, fd, 0);
+
+   /* Map writable because we include the memory area for store
+    * testing in the image.
+    */
+   addr = mmap(0, len, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE, fd, 0);
    if (!addr)
    {
       perror("mmap");
