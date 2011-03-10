@@ -554,7 +554,6 @@ sub parse_config_file($)
                 my $blockname = $bit;
                 $blockname =~ s/^!//;
                 my $block = shift @bits;
-                print "blockname $blockname block $block\n";
                 if (!defined $block || $block !~ /^{/) {
                     print STDERR "$file:$.: expected block following '!$blockname'\n";
                     exit(1);
