@@ -59,6 +59,13 @@ QADD8  T1 11111 010 1000 rn:4 1111 rd:4 0001 rm:4
 QSUB16 T1 11111 010 1101 rn:4 1111 rd:4 0001 rm:4
 QSUB8  T1 11111 010 1100 rn:4 1111 rd:4 0001 rm:4
 
+# dual multiplies
+SMLAD T1 11111 0110 010 rn:4 ra:4 rd:4 000 m rm:4
+SMUAD T1 11111 0110 010 rn:4 1111 rd:4 000 m rm:4
+SMLSD T1 11111 0110 100 rn:4 ra:4 rd:4 000 m rm:4
+SMUSD T1 11111 0110 100 rn:4 1111 rd:4 000 m rm:4
+SMLALD T1 11111 0111 100 rn:4 rdlo:4 rdhi:4 110 m rm:4 { $rdhi != $rdlo; }
+SMLSLD T1 11111 0111 101 rn:4 rdlo:4 rdhi:4 110 m rm:4 { $rdhi != $rdlo; }
 
 
 ##############################################################################
