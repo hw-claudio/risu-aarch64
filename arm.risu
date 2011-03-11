@@ -312,3 +312,60 @@ USUB16 A1 cond:4 0110 0101 rn:4 rd:4 1111 0111 rm:4
 
 SASX A1 cond:4 0110 0001 rn:4 rd:4 1111 0011 rm:4
 SSAX A1 cond:4 0110 0001 rn:4 rd:4 1111 0101 rm:4
+
+# vector duplicate (scalar)
+# Q=1 case
+VDUP_scalar A1a 1111 0011 1 d 11 imm:4 vd:3 0 110 00 1 m 0 vm:4 { ($imm & 7) != 0; }
+# Q=0 case
+VDUP_scalar A1b 1111 0011 1 d 11 imm:4 vd:4 110 00 0 m 0 vm:4 { ($imm & 7) != 0; }
+# vector duplicate (reg)
+# b:e == 11 UNDEF
+VDUP A1a cond:4 1110 1 b 1 0 vd:3 0 rt:4 1011 d 0 e 1 0000 { ($b == 0) || ($e == 0); }
+VDUP A1b cond:4 1110 1 b 0 0 vd:4 rt:4 1011 d 0 e 1 0000 { ($b == 0) || ($e == 0); }
+
+########### Neon float ops ###############################
+# These patterns cover the Neon instructions which handle
+# floating-point data (but not the versions of the insns
+# which do integer data, or the VFP versions).
+##########################################################
+
+# Neon float ops:
+# VMAX, VMIN
+# VABD Q=0
+VABD_fp A1a 1111 0011 0 d 1 0 vn:4 vd:4 1101 n 0 m 0 vm:4
+# Q=1
+VABD_fp A1b 1111 0011 0 d 1 0 vn:3 0 vd:3 0 1101 n 1 m 0 vm:3 0
+
+# VADD Q=0, Q=1
+VADD A1a 1111 0010 0 d 0 0 vn:4 vd:4 1101 n 0 m 0 vm:4
+VADD A1b 1111 0010 0 d 0 0 vn:3 0 vd:3 0 1101 n 1 m 0 vm:3 0
+# VSUB
+VSUB A1a 1111 0010 0 d 1 0 vn:4 vd:4 1101 n 0 m 0 vm:4
+VSUB A1b 1111 0010 0 d 1 0 vn:3 0 vd:3 0 1101 n 1 m 0 vm:3 0
+# VMUL
+VMUL A1a 1111 0011 0 d 0 0 vn:4 vd:4 1101 n 0 m 1 vm:4
+VMUL A1b 1111 0011 0 d 0 0 vn:3 0 vd:3 0 1101 n 1 m 1 vm:3 0
+# VCEQ, VCGE, VCGT
+VCEQ A2a 1111 0010 0 d 0 0 vn:4 vd:4 1110 n 0 m 0 vm:4
+VCEQ A2b 1111 0010 0 d 0 0 vn:3 0 vd:3 0 1110 n 1 m 0 vm:3 0
+VCGE A2a 1111 0011 0 d 0 0 vn:4 vd:4 1110 n 0 m 0 vm:4
+VCGE A2b 1111 0011 0 d 0 0 vn:3 0 vd:3 0 1110 n 1 m 0 vm:3 0
+VCGT A2a 1111 0011 0 d 1 0 vn:4 vd:4 1110 n 0 m 0 vm:4
+VCGT A2b 1111 0011 0 d 1 0 vn:3 0 vd:3 0 1110 n 1 m 0 vm:3 0
+# VCEQ, VCGE, VCGT, VCLT, VCLE with imm 0 -- F=1 forms only!
+VCEQ0 A1a 1111 0011 1 d 11 10 0 1 vd:4 0 1 010 0 m 0 vm:4
+VCEQ0 A1b 1111 0011 1 d 11 10 0 1 vd:3 0 0 1 010 1 m 0 vm:3 0
+VCGE0 A1a 1111 0011 1 d 11 10 0 1 vd:4 0 1 001 0 m 0 vm:4
+VCGE0 A1b 1111 0011 1 d 11 10 0 1 vd:3 0 0 1 001 1 m 0 vm:3 0
+VCGT0 A1a 1111 0011 1 d 11 10 0 1 vd:4 0 1 000 0 m 0 vm:4
+VCGT0 A1b 1111 0011 1 d 11 10 0 1 vd:3 0 0 1 000 1 m 0 vm:3 0
+VCLE0 A1a 1111 0011 1 d 11 10 0 1 vd:4 0 1 011 0 m 0 vm:4
+VCLE0 A1b 1111 0011 1 d 11 10 0 1 vd:3 0 0 1 011 1 m 0 vm:3 0
+VCLT0 A1a 1111 0011 1 d 11 10 0 1 vd:4 0 1 100 0 m 0 vm:4
+VCLT0 A1b 1111 0011 1 d 11 10 0 1 vd:3 0 0 1 100 1 m 0 vm:3 0
+
+# VACGE, VACGT
+VACG A1a 1111 0011 0 d op 0 vn:4 vd:4 1110 n 0 m 1 vm:4
+VACG A1b 1111 0011 0 d op 0 vn:3 0 vd:3 0 1110 n 1 m 1 vm:3 0
+
+
