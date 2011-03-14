@@ -330,7 +330,11 @@ VDUP A1b cond:4 1110 1 b 0 0 vd:4 rt:4 1011 d 0 e 1 0000 { ($b == 0) || ($e == 0
 ##########################################################
 
 # Neon float ops:
-# VMAX, VMIN
+# VMAX, VMIN Q=0
+VMAXMIN_fp A1a 1111 0010 0 d op 0 vn:4 vd:4 1111 n 0 m 0 vm:4
+# Q=1
+VMAXMIN_fp A1b 1111 0010 0 d op 0 vn:3 0 vd:3 0 1111 n 1 m 0 vm:3 0
+
 # VABD Q=0
 VABD_fp A1a 1111 0011 0 d 1 0 vn:4 vd:4 1101 n 0 m 0 vm:4
 # Q=1
@@ -369,3 +373,6 @@ VACG A1a 1111 0011 0 d op 0 vn:4 vd:4 1110 n 0 m 1 vm:4
 VACG A1b 1111 0011 0 d op 0 vn:3 0 vd:3 0 1110 n 1 m 1 vm:3 0
 
 
+# VRECPS: Q=0, Q=1 cases
+VRECPS A1a 1111 0010 0 d 0 0 vn:4 vd:4 1111 n 0 m 1 vm:4
+VRECPS A1b 1111 0010 0 d 0 0 vn:3 0 vd:3 0 1111 n 1 m 1 vm:3 0
