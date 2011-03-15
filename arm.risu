@@ -376,3 +376,52 @@ VACG A1b 1111 0011 0 d op 0 vn:3 0 vd:3 0 1110 n 1 m 1 vm:3 0
 # VRECPS: Q=0, Q=1 cases
 VRECPS A1a 1111 0010 0 d 0 0 vn:4 vd:4 1111 n 0 m 1 vm:4
 VRECPS A1b 1111 0010 0 d 0 0 vn:3 0 vd:3 0 1111 n 1 m 1 vm:3 0
+
+########### Neon loads and stores #########################
+# This set of patterns isn't complete yet...
+##########################################################
+
+# VLD*, single element to all lanes
+
+# All addressing modes (reg, reg postindex reg, reg postindex eltsz)
+# Note use of 'xm' for 'rm' to avoid the implicit "not 13 or 15"
+# constraint -- 13 and 15 encode the other two addr modes so are OK here.
+# The constraints are avoiding: d+regs > 32 (UNPREDICTABLE);
+# also the UNDEF sz/a combinations; and the risugen restriction
+# that the two regs in reg postindex reg must be different.
+# Max alignment requirement for VLD1 is 4 bytes.
+VLD1_stoa A1a 1111 0100 1 d 10 rn:4 vd:4 11 00 sz:2 t a xm:4 \
+    !constraints { ($d == 0 || $t == 0 || $vd != 0xf) && $sz != 3 && ($sz != 0 || $a != 1) && ($rn != $xm); } \
+    !memory { reg($rn); }
+
+# As usual we need to separate out the UNDEF cases as they
+# must not have !memory blocks
+# sz 11: UNDEF
+VLD1_stob A1b 1111 0100 1 d 10 rn:4 vd:4 11 00 11 t a rm:4
+# sz 00, a 1 : UNDEF
+VLD1_stoc A1c 1111 0100 1 d 10 rn:4 vd:4 11 00 00 t 1 rm:4
+
+# VLD2: d+t+1 > 31 is unpredictable
+VLD2_stoa A1a 1111 0100 1 d 10 rn:4 vd:4 11 01 sz:2 t a xm:4 \
+    !constraints { (((($d << 4)|$vd) + $t + 1) < 32) && $sz != 3 && ($rn != $xm); } \
+    !memory { align(8); reg($rn); }
+
+# UNDEF case : sz 11
+VLD2_stoa A1b 1111 0100 1 d 10 rn:4 vd:4 11 01 11 t a xm:4
+
+# VLD3: d+(t+1)*2 > 31 is unpredictable
+VLD3_stoa A1a 1111 0100 1 d 10 rn:4 vd:4 11 01 sz:2 t 0 xm:4 \
+    !constraints { (((($d << 4)|$vd) + ($t + 1)*2) < 32) && $sz != 3 && ($rn != $xm); } \
+    !memory { reg($rn); }
+
+# UNDEF case : sz 11 or a 1
+VLD3_stoa A1b 1111 0100 1 d 10 rn:4 vd:4 11 10 11 t a xm:4
+VLD3_stoa A1c 1111 0100 1 d 10 rn:4 vd:4 11 10 sz:2 t 1 xm:4
+
+# VLD4: d+(t+1)*3 > 31 is unpredictable
+VLD4_stoa A1a 1111 0100 1 d 10 rn:4 vd:4 11 11 sz:2 t a xm:4 \
+    !constraints { (((($d << 4)|$vd) + ($t + 1)*3) < 32) && ($sz != 3 || $a != 0) && ($rn != $xm); } \
+    !memory { align(16); reg($rn); }
+
+# UNDEF case : sz 11 and a 0
+VLD4_stoa A1b 1111 0100 1 d 10 rn:4 vd:4 11 11 11 t 0 xm:4
