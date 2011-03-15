@@ -113,6 +113,10 @@ Currently supported addressing modes:
  reg_plus_reg(basereg, indexreg, trashed);
  reg_plus_reg_shifted(basereg, indexreg, shift, trashed);
     -- this is for [basereg + indexreg LSL shift]
+The block can also include a call to the align() function
+to indicate the memory alignment required for the access.
+The default is 4-alignment. The align() call must precede
+the addressing mode function call.
 
 Implementation details and points to note
 -----------------------------------------

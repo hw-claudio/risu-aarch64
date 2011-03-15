@@ -27,6 +27,9 @@ my @pattern_re = ();
 
 my $bytecount;
 
+# Maximum alignment restriction permitted for a memory op.
+my $MAXALIGN = 64;
+
 # An instruction pattern as parsed from the config file turns into
 # a record like this:
 #   name          # name of the pattern
@@ -332,19 +335,31 @@ sub write_random_register_data()
     write_risuop($OP_COMPARE);
 }
 
+sub is_pow_of_2($)
+{
+    my ($x) = @_;
+    return ($x > 0) && (($x & ($x - 1)) == 0);
+}
+
 sub write_memblock_setup()
 {
     # Write code which sets up the memory block for loads and stores.
     # We just need to set r0 to point to a block of at least 8K length
-    # of random data.
+    # of random data, aligned to the maximum desired alignment (32).
     if ($is_thumb) {
         write_switch_to_arm();
     }
 
-    insn32(0xe28f0004); # add r0, pc, #4
+    my $align = $MAXALIGN;
+    my $datalen = 2048 + $align;
+    die "bad alignment!" if ($align > 255) || !is_pow_of_2($align);
+
+    # set r0 to (datablock + (align-1)) & ~(align-1)
+    insn32(0xe28f0000 | ($align + 7)); # add r0, pc, #(8 + $align - 1)
+    insn32(0xe3c00000 | ($align - 1)); # bic r0, r0, (align-1)
     write_arm_risuop($OP_SETMEMBLOCK);
-    insn32(0xea000000 + 2047); # b next
-    for (0..2047) {
+    insn32(0xea000000 + ($datalen - 1)); # b next
+    for (0..($datalen - 1)) {
         insn32(rand(0xffffffff));
     }
     # next:
@@ -404,14 +419,32 @@ sub dump_insn_details($$)
 # The last (array) parameter lists the registers which are trashed
 # by the instruction (ie which are the targets of the load).
 # This is used to avoid problems when the base reg is a load target.
+
+# Global used to communicate between align(x) and reg() etc.
+my $alignment_restriction;
+
+sub align($)
+{
+    my ($a) = @_;
+    if (!is_pow_of_2($a) || ($a < 0) || ($a > $MAXALIGN)) {
+        die "bad align() value $a\n";
+    }
+    $alignment_restriction = $a;
+}
+
+sub write_get_offset()
+{
+    # Emit code to get a random offset within the memory block, of the
+    # right alignment, into r0
+    my $offset = rand(2048) & ~($alignment_restriction - 1);
+    write_mov_ri(0, $offset);
+    write_risuop($OP_GETMEMBLOCK);
+}
+
 sub reg($@)
 {
     my ($base, @trashed) = @_;
-    # Get a random offset within the memory block, of the
-    # right alignment.
-    my $offset = rand(2048) & ~3;
-    write_mov_ri(0, $offset);
-    write_risuop($OP_GETMEMBLOCK);
+    write_get_offset();
     # Now r0 is the address we want to do the access to,
     # so just move it into the basereg
     if ($base != 0) {
@@ -428,11 +461,7 @@ sub reg_plus_imm($$@)
 {
     # Handle reg + immediate addressing mode
     my ($base, $imm, @trashed) = @_;
-    # Get a random offset within the memory block, of the
-    # right alignment.
-    my $offset = rand(2048) & ~3;
-    write_mov_ri(0, $offset);
-    write_risuop($OP_GETMEMBLOCK);
+    write_get_offset();
     # Now r0 is the address we want to do the access to,
     # so set the basereg by doing the inverse of the
     # addressing mode calculation, ie base = r0 - imm
@@ -479,9 +508,7 @@ sub reg_plus_reg_shifted($$$@)
 
     # Get a random offset within the memory block, of the
     # right alignment.
-    my $offset = rand(2048) & ~3;
-    write_mov_ri(0, $offset);
-    write_risuop($OP_GETMEMBLOCK);
+    write_get_offset();
     # Now r0 is the address we want to do the access to,
     # so set the basereg by doing the inverse of the
     # addressing mode calculation, ie base = r0 - idx LSL imm
@@ -582,6 +609,8 @@ sub gen_one_insn($$)
             # which is expected to be a call to a function which emits
             # the code to set up the base register and returns the
             # number of the base register.
+            # Default alignment requirement is 4 bytes.
+            align(4);
             $basereg = eval_with_fields($insn, $rec, "memory", $memblock);
         }
 
