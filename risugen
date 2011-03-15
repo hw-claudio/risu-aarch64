@@ -21,7 +21,13 @@ use Text::Balanced qw { extract_bracketed extract_multiple };
 my @insns;
 my %insn_details;
 
-my $is_thumb = 0;
+# Note that we always start in ARM mode even if the C code was compiled for
+# thumb because we are called by branch to a lsbit-clear pointer.
+# is_thumb tracks the mode we're actually currently in (ie should we emit
+# an arm or thumb insn?); test_thumb tells us which mode we need to switch
+# to to emit the insns under test.
+my $is_thumb = 0;   # are we currently in Thumb mode?
+my $test_thumb = 0; # should test code be Thumb mode?
 
 my @pattern_re = ();
 
@@ -119,21 +125,38 @@ sub write_risuop($)
 
 sub write_switch_to_thumb()
 {
-    # Note that we have to clean up r0 afterwards
-    # so it isn't tainted with a value which depends
-    # on PC (and which might differ between hw and
-    # qemu/valgrind/etc)
-    insn32(0xe28f0001); # add r0, pc, #1
-    insn32(0xe12fff10); # bx r0
-    insn16(0x4040);     # eor r0,r0 (enc T1)
+    # Switch to thumb if we're not already there
+    if (!$is_thumb) {
+        # Note that we have to clean up r0 afterwards
+        # so it isn't tainted with a value which depends
+        # on PC (and which might differ between hw and
+        # qemu/valgrind/etc)
+        insn32(0xe28f0001);     # add r0, pc, #1
+        insn32(0xe12fff10);     # bx r0
+        insn16(0x4040);         # eor r0,r0 (enc T1)
+        $is_thumb = 1;
+    }
 }
 
 sub write_switch_to_arm()
 {
-    # Switch to ARM mode.
-    align4();
-    insn16(0x4778);  # bx pc
-    insn16(0xbf00);  # nop
+    # Switch to ARM mode if we're not already there
+    if ($is_thumb) {
+        align4();
+        insn16(0x4778);  # bx pc
+        insn16(0xbf00);  # nop
+        $is_thumb = 0;
+    }
+}
+
+sub write_switch_to_test_mode()
+{
+    # Switch to whichever mode we need for test code
+    if ($test_thumb) {
+        write_switch_to_thumb();
+    } else {
+        write_switch_to_arm();
+    }
 }
 
 sub write_sub_rrr($$$)
@@ -299,9 +322,7 @@ sub write_random_register_data()
 {
     # TODO hardcoded, also no d16-d31 initialisation
     my $vfp = 2;  # 0 : no vfp, 1 : vfpd16, 2 : vfpd32
-    if ($is_thumb) {
-        write_switch_to_arm();
-    }
+    write_switch_to_arm();
     
     # initialise all registers
     if ($vfp == 1) {
@@ -329,9 +350,6 @@ sub write_random_register_data()
     # next:
     # clear the flags (NZCVQ and GE): msr APSR_nzcvqg, #0
     insn32(0xe32cf000);
-    if ($is_thumb) {
-        write_switch_to_thumb();
-    }
     write_risuop($OP_COMPARE);
 }
 
@@ -346,9 +364,7 @@ sub write_memblock_setup()
     # Write code which sets up the memory block for loads and stores.
     # We just need to set r0 to point to a block of at least 8K length
     # of random data, aligned to the maximum desired alignment (32).
-    if ($is_thumb) {
-        write_switch_to_arm();
-    }
+    write_switch_to_arm();
 
     my $align = $MAXALIGN;
     my $datalen = 2048 + $align;
@@ -364,31 +380,18 @@ sub write_memblock_setup()
     }
     # next:
 
-    if ($is_thumb) {
-        write_switch_to_thumb();
-    }
 }
 
-sub write_arm_prologue($)
+sub write_set_fpscr($)
 {
     my ($fpscr) = @_;
-    # We will start in ARM mode because we're just loaded
-    # as binary and jump to the aligned start of it, so
-    # the target address LSB is always 0.
-
+    write_switch_to_arm();
     # movw r0, imm16
     insn32(0xe3000000 | ($fpscr & 0xfff) | (($fpscr & 0xf000) << 4));
     # movt r0, imm16
     insn32(0xe3400000 | (($fpscr & 0xf0000000) >> 12) | (($fpscr & 0x0fff0000) >> 16));
     # vmsr fpscr, r0
     insn32(0xeee10a10);
-
-    if ($is_thumb) {
-        # This mode change will be immediately followed by one
-        # in write_random_register_data() but never mind.
-        write_switch_to_thumb();
-    }
-    write_random_register_data();
 }
 
 sub dump_insn_details($$)
@@ -681,9 +684,9 @@ sub progress_end()
     $| = 0;
 }
 
-sub write_test_code($$)
+sub write_test_code($$$)
 {
-    my ($condprob, $numinsns) = @_;
+    my ($condprob, $fpscr, $numinsns) = @_;
     # convert from probability that insn will be conditional to
     # probability of forcing insn to unconditional
     $condprob = 1 - $condprob;
@@ -704,9 +707,14 @@ sub write_test_code($$)
     print "Generating code using patterns: @keys...\n";
     progress_start(78, $numinsns);
 
+    write_set_fpscr($fpscr);
+
     if (grep { defined($insn_details{$_}->{blocks}->{"memory"}) } @keys) {
         write_memblock_setup();
     }
+    # memblock setup doesn't clean its registers, so this must come afterwards.
+    write_random_register_data();
+    write_switch_to_test_mode();
 
     for my $i (1..$numinsns) {
         my $insn_enc = $keys[int rand (@keys)];
@@ -718,9 +726,11 @@ sub write_test_code($$)
         # for the VFP registers to decay to NaNs and zeroes.
         if (($i % 100) == 0) {
             write_random_register_data();
+            write_switch_to_test_mode();
         }
         progress_update($i);
     }
+    write_risuop($OP_TESTEND);
     progress_end();
 }
 
@@ -743,9 +753,9 @@ sub parse_risu_directive($$@)
             exit(1);
         }
         if ($rest[0] eq "thumb") {
-            $is_thumb = 1;
+            $test_thumb = 1;
         } elsif ($rest[0] eq "arm") {
-            $is_thumb = 0;
+            $test_thumb = 0;
         } else {
             print STDERR "$file:$.: .mode: unknown mode $rest[0]\n";
             exit(1);
@@ -988,9 +998,7 @@ sub main()
     parse_config_file($infile);
     
     open_bin($outfile);
-    write_arm_prologue($fpscr);
-    write_test_code($condprob, $numinsns);
-    write_risuop($OP_TESTEND);
+    write_test_code($condprob, $fpscr, $numinsns);
     close_bin();
     return 0;
 }
