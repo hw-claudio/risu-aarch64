@@ -535,12 +535,12 @@ sub reg_plus_reg($$@)
     return reg_plus_reg_shifted($base, $idx, 0, @trashed);
 }
 
-sub eval_with_fields($$$$) {
+sub eval_with_fields($$$$$) {
     # Evaluate the given block in an environment with Perl variables
     # set corresponding to the variable fields for the insn.
     # Return the result of the eval; we die with a useful error
     # message in case of syntax error.
-    my ($insn, $rec, $blockname, $block) = @_;
+    my ($insnname, $insn, $rec, $blockname, $block) = @_;
     my $evalstr = "{ ";
     for my $tuple (@{ $rec->{fields} }) {
         my ($var, $pos, $mask) = @$tuple;
@@ -551,7 +551,7 @@ sub eval_with_fields($$$$) {
     $evalstr .= "}";
     my $v = eval $evalstr;
     if ($@) {
-        print "Syntax error detected evaluating $blockname string:\n$block\n";
+        print "Syntax error detected evaluating $insnname $blockname string:\n$block\n";
         exit(1);
     }
     return $v;
@@ -565,6 +565,7 @@ sub gen_one_insn($$)
     INSN: while(1) {
         my ($forcecond, $rec) = @_;
         my $insn = int(rand(0xffffffff));
+        my $insnname = $rec->{name};
         my $insnwidth = $rec->{width};
         my $fixedbits = $rec->{fixedbits};
         my $fixedbitmask = $rec->{fixedbitmask};
@@ -591,11 +592,11 @@ sub gen_one_insn($$)
         if (defined $constraint) {
             # user-specified constraint: evaluate in an environment
             # with variables set corresponding to the variable fields.
-            my $v = eval_with_fields($insn, $rec, "constraints", $constraint);
+            my $v = eval_with_fields($insnname, $insn, $rec, "constraints", $constraint);
             if (!$v) {
                 $constraintfailures++;
                 if ($constraintfailures > 10000) {
-                    print "10000 consecutive constraint failures for constraints string:\n$constraint\n";
+                    print "10000 consecutive constraint failures for $insnname constraints string:\n$constraint\n";
                     exit (1);
                 }
                 next INSN;
@@ -614,7 +615,7 @@ sub gen_one_insn($$)
             # number of the base register.
             # Default alignment requirement is 4 bytes.
             align(4);
-            $basereg = eval_with_fields($insn, $rec, "memory", $memblock);
+            $basereg = eval_with_fields($insnname, $insn, $rec, "memory", $memblock);
         }
 
         if ($is_thumb) {
