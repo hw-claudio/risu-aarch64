@@ -564,3 +564,79 @@ VST4_s A1b 1111 0100 1 d 00 rn:4 vd:4 10 01 idx:2 0 idx0 xm:4 \
 # only UNDEF case is sz=10, idx<1:0>==11
 VST4_s A1c 1111 0100 1 d 00 rn:4 vd:4 10 01 idx:2 11 xm:4
 
+
+# VLD*, multiple single elements
+
+# We separate these out by 'type' field
+# type 0111: VLD1 regs=1
+VLD1_m A1a 1111 0100 0 d 10 rn:4 vd:4 0111 sz:2 0 align xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 1) <= 32); } \
+   !memory { align(8); reg($rn); }
+# type 1010: VLD1 regs=2
+VLD1_m A1b 1111 0100 0 d 10 rn:4 vd:4 1010 sz:2 align:2 xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 2) <= 32) && ($align != 3); } \
+   !memory { align(16); reg($rn); }
+# type 0110: VLD1 regs=3
+VLD1_m A1c 1111 0100 0 d 10 rn:4 vd:4 0110 sz:2 0 align xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 3) <= 32); } \
+   !memory { align(8); reg($rn); }
+# type 0010: VLD1 regs=4
+VLD1_m A1d 1111 0100 0 d 10 rn:4 vd:4 0010 sz:2 align:2 xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 4) <= 32); } \
+   !memory { align(32); reg($rn); }
+
+# type 1000: VLD2 regs=1 inc=1
+VLD2_m A1a 1111 0100 0 d 10 rn:4 vd:4 1000 sz:2 align:2 xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 1 + 1) <= 32) && ($align != 3) && ($sz != 3); } \
+   !memory { align(16); reg($rn); }
+# type 1001: VLD2 regs=1 inc=2
+VLD2_m A1b 1111 0100 0 d 10 rn:4 vd:4 1001 sz:2 align:2 xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 2 + 1) <= 32) && ($align != 3) && ($sz != 3); } \
+   !memory { align(16); reg($rn); }
+# type 0011: VLD2 regs=2 inc=2
+VLD2_m A1c 1111 0100 0 d 10 rn:4 vd:4 0011 sz:2 align:2 xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 2 + 2) <= 32) && ($sz != 3); } \
+   !memory { align(32); reg($rn); }
+
+# type 0100: VLD3 inc=1
+VLD3_m A1a 1111 0100 0 d 10 rn:4 vd:4 0100 sz:2 0 align xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 2) <= 31) && ($sz != 3); } \
+   !memory { align(8); reg($rn); }
+# type 0101: VLD3 inc=2
+VLD3_m A1b 1111 0100 0 d 10 rn:4 vd:4 0101 sz:2 0 align xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 4) <= 31) && ($sz != 3); } \
+   !memory { align(8); reg($rn); }
+
+# type 0000: VLD4 inc=1
+VLD4_m A1a 1111 0100 0 d 10 rn:4 vd:4 0000 sz:2 align:2 xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 3) <= 31) && ($sz != 3); } \
+   !memory { align(32); reg($rn); }
+# type 0001: VLD4 inc=2
+VLD4_m A1b 1111 0100 0 d 10 rn:4 vd:4 0000 sz:2 align:2 xm:4 \
+   !constraints { ($rn != $xm) && (((($d << 4)|$vd) + 6) <= 31) && ($sz != 3); } \
+   !memory { align(32); reg($rn); }
+
+# UNDEF cases for all VLD*_m:
+
+# These are the patterns for VLD*_m UNDEFs on align bits being wrong
+# Conveniently the conditions for all the VLD* line up with the top
+# bits of the type field.
+# type = 01xx align = 1x
+VLDn_m A1a 1111 0100 0 d 10 rn:4 vd:4 01 type:2 sz:2 1 align xm:4
+# type = 10xx align = 11
+VLDn_m A1b 1111 0100 0 d 10 rn:4 vd:4 10 type:2 sz:2 11 xm:4
+
+# VLD2/3/4 UNDEF on SZ=1; slightly tedious to pick these out
+# but they are type = xx0x or type = 0011
+VLDn_m A1c 1111 0100 0 d 10 rn:4 vd:4 type:2 0 type0 11 align:2 xm:4
+VLDn_m A1d 1111 0100 0 d 10 rn:4 vd:4 0011 11 align:2 xm:4
+
+# Unused spaces in the load/store instruction encoding space
+# (everything else is some sort of VLDn/VSTn)
+# A = 0 cases:
+# type = 11xx : always UNDEF
+VLDST_UNDEF A1a 1111 0100 0 any:2 0 any2:8 11 type:2 any3:8
+# type = 1011 : always UNDEF
+VLDST_UNDEF A1b 1111 0100 0 any:2 0 any2:8 1011 any3:8
+# A = 1 cases: only stores with B=11xx, all else is allocated
+VLDST_UNDEF A1c 1111 0100 1 x 0 0 any:8 11 any2:10
