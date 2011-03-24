@@ -493,3 +493,74 @@ VLD4_s A1b 1111 0100 1 d 10 rn:4 vd:4 10 01 idx:2 0 idx0 xm:4 \
 
 # only UNDEF case is sz=10, idx<1:0>==11
 VLD4_s A1c 1111 0100 1 d 10 rn:4 vd:4 10 01 idx:2 11 xm:4
+
+
+# VST* single element from one lane
+# These are actually identical to the VLD* patterns except that
+# bit 21 is clear to indicate store rather than load.
+
+# sz == 00
+VST1_s A1a 1111 0100 1 d 00 rn:4 vd:4 00 00 idx:3 0 xm:4 \
+   !constraints { ($rn != $xm); } \
+   !memory { reg($rn); }
+
+# sz == 01
+VST1_s A1b 1111 0100 1 d 00 rn:4 vd:4 01 00 idx:2 0 idx0 xm:4 \
+   !constraints { ($rn != $xm); } \
+   !memory { reg($rn); }
+
+# sz == 10
+VST1_s A1c 1111 0100 1 d 00 rn:4 vd:4 10 00 idx3 0 idx:2 xm:4 \
+   !constraints { ($rn != $xm) && ($idx == 0 || $idx == 3); } \
+   !memory { reg($rn); }
+
+# UNDEF cases: bad index fields for each size
+VST1_s A1d 1111 0100 1 d 00 rn:4 vd:4 00 00 idx:3 1 xm:4
+VST1_s A1e 1111 0100 1 d 00 rn:4 vd:4 01 00 idx:2 1 idx0 xm:4
+VST1_s A1f 1111 0100 1 d 00 rn:4 vd:4 10 00 idx:4 xm:4 \
+   !constraints { ($idx & 4) == 1 || ($idx & 3) == 1 || ($idx & 3) == 2; }
+
+# sz == 00, 01 (no UNDEF cases)
+VST2_s A1a 1111 0100 1 d 00 rn:4 vd:4 0 sz 01 idx:4 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 1 + (($idx >> $sz) & 1)) < 32; } \
+   !memory { reg($rn); }
+
+# sz == 10
+VST2_s A1b 1111 0100 1 d 00 rn:4 vd:4 10 01 idx:2 0 idx0 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 1 + ($idx & 1)) < 32; } \
+   !memory { align(8); reg($rn); }
+
+# only UNDEF case is sz=10, idx<1>=1
+VST2_s A1c 1111 0100 1 d 00 rn:4 vd:4 10 01 idx:2 1 idx0 xm:4
+
+# UNPREDICTABLE here is for d+inc+inc > 31
+# sz == 00, 01
+VST3_s A1a 1111 0100 1 d 00 rn:4 vd:4 0 sz 10 idx:3 0 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 2 * (1 + ((($idx << 1) >> $sz) & 1))) < 32; } \
+   !memory { reg($rn); }
+
+# sz == 10
+VST3_s A1b 1111 0100 1 d 00 rn:4 vd:4 10 10 idx:2 00 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 2 * (1 + ($idx & 1))) < 32; } \
+   !memory { reg($rn); }
+
+# UNDEF: sz == 00, 01, idx<0> != 0
+VST3_s A1c 1111 0100 1 d 00 rn:4 vd:4 0 sz 10 idx:3 1 xm:4
+# UNDEF: sz == 10, idx<1:0> != 00
+VST3_s A1d 1111 0100 1 d 00 rn:4 vd:4 10 10 idx:4 xm:4 \
+   !constraints { ($idx & 3) != 0; }
+
+# VST4 has an UNPREDICTABLE case for d+3*inc > 31.
+# sz == 00, 01 (no UNDEF cases)
+VST4_s A1a 1111 0100 1 d 00 rn:4 vd:4 0 sz 11 idx:4 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 3 * (1 + (($idx & (1 << $sz)) >> 1))) < 32; } \
+   !memory { align(8); reg($rn); }
+
+# sz == 10
+VST4_s A1b 1111 0100 1 d 00 rn:4 vd:4 10 01 idx:2 0 idx0 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 3 * (1 + ($idx & 1))) < 32; } \
+   !memory { align(16); reg($rn); }
+
+# only UNDEF case is sz=10, idx<1:0>==11
+VST4_s A1c 1111 0100 1 d 00 rn:4 vd:4 10 01 idx:2 11 xm:4
+
