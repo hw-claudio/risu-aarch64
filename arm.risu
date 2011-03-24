@@ -397,9 +397,9 @@ VLD1_stoa A1a 1111 0100 1 d 10 rn:4 vd:4 11 00 sz:2 t a xm:4 \
 # As usual we need to separate out the UNDEF cases as they
 # must not have !memory blocks
 # sz 11: UNDEF
-VLD1_stob A1b 1111 0100 1 d 10 rn:4 vd:4 11 00 11 t a rm:4
+VLD1_stoa A1b 1111 0100 1 d 10 rn:4 vd:4 11 00 11 t a rm:4
 # sz 00, a 1 : UNDEF
-VLD1_stoc A1c 1111 0100 1 d 10 rn:4 vd:4 11 00 00 t 1 rm:4
+VLD1_stoa A1c 1111 0100 1 d 10 rn:4 vd:4 11 00 00 t 1 rm:4
 
 # VLD2: d+t+1 > 31 is unpredictable
 VLD2_stoa A1a 1111 0100 1 d 10 rn:4 vd:4 11 01 sz:2 t a xm:4 \
