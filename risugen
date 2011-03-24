@@ -551,7 +551,7 @@ sub eval_with_fields($$$$$) {
     $evalstr .= "}";
     my $v = eval $evalstr;
     if ($@) {
-        print "Syntax error detected evaluating $insnname $blockname string:\n$block\n";
+        print "Syntax error detected evaluating $insnname $blockname string:\n$block\n$@";
         exit(1);
     }
     return $v;
