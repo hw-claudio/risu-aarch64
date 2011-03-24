@@ -425,3 +425,71 @@ VLD4_stoa A1a 1111 0100 1 d 10 rn:4 vd:4 11 11 sz:2 t a xm:4 \
 
 # UNDEF case : sz 11 and a 0
 VLD4_stoa A1b 1111 0100 1 d 10 rn:4 vd:4 11 11 11 t 0 xm:4
+
+# VLD*, single element to one lane. We split the sz cases out
+# for convenience of filtering the UNDEF cases and the VLD1-to-all-lanes
+# sz == 00
+VLD1_s A1a 1111 0100 1 d 10 rn:4 vd:4 00 00 idx:3 0 xm:4 \
+   !constraints { ($rn != $xm); } \
+   !memory { reg($rn); }
+
+# sz == 01
+VLD1_s A1b 1111 0100 1 d 10 rn:4 vd:4 01 00 idx:2 0 idx0 xm:4 \
+   !constraints { ($rn != $xm); } \
+   !memory { reg($rn); }
+
+# sz == 10
+VLD1_s A1c 1111 0100 1 d 10 rn:4 vd:4 10 00 idx3 0 idx:2 xm:4 \
+   !constraints { ($rn != $xm) && ($idx == 0 || $idx == 3); } \
+   !memory { reg($rn); }
+
+# UNDEF cases: bad index fields for each size
+VLD1_s A1d 1111 0100 1 d 10 rn:4 vd:4 00 00 idx:3 1 xm:4
+VLD1_s A1e 1111 0100 1 d 10 rn:4 vd:4 01 00 idx:2 1 idx0 xm:4
+VLD1_s A1f 1111 0100 1 d 10 rn:4 vd:4 10 00 idx:4 xm:4 \
+   !constraints { ($idx & 4) == 1 || ($idx & 3) == 1 || ($idx & 3) == 2; }
+
+# VLD2 has an UNPREDICTABLE case for d+inc > 31.
+# sz == 00, 01 (no UNDEF cases)
+VLD2_s A1a 1111 0100 1 d 10 rn:4 vd:4 0 sz 01 idx:4 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 1 + (($idx >> $sz) & 1)) < 32; } \
+   !memory { reg($rn); }
+
+# sz == 10
+VLD2_s A1b 1111 0100 1 d 10 rn:4 vd:4 10 01 idx:2 0 idx0 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 1 + ($idx & 1)) < 32; } \
+   !memory { align(8); reg($rn); }
+
+# only UNDEF case is sz=10, idx<1>=1
+VLD2_s A1c 1111 0100 1 d 10 rn:4 vd:4 10 01 idx:2 1 idx0 xm:4
+
+# UNPREDICTABLE here is for d+inc+inc > 31
+# sz == 00, 01
+VLD3_s A1a 1111 0100 1 d 10 rn:4 vd:4 0 sz 10 idx:3 0 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 2 * (1 + ((($idx << 1) >> $sz) & 1))) < 32; } \
+   !memory { reg($rn); }
+
+# sz == 10
+VLD3_s A1b 1111 0100 1 d 10 rn:4 vd:4 10 10 idx:2 00 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 2 * (1 + ($idx & 1))) < 32; } \
+   !memory { reg($rn); }
+
+# UNDEF: sz == 00, 01, idx<0> != 0
+VLD3_s A1c 1111 0100 1 d 10 rn:4 vd:4 0 sz 10 idx:3 1 xm:4
+# UNDEF: sz == 10, idx<1:0> != 00
+VLD3_s A1d 1111 0100 1 d 10 rn:4 vd:4 10 10 idx:4 xm:4 \
+   !constraints { ($idx & 3) != 0; }
+
+# VLD4 has an UNPREDICTABLE case for d+3*inc > 31.
+# sz == 00, 01 (no UNDEF cases)
+VLD4_s A1a 1111 0100 1 d 10 rn:4 vd:4 0 sz 11 idx:4 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 3 * (1 + (($idx & (1 << $sz)) >> 1))) < 32; } \
+   !memory { align(8); reg($rn); }
+
+# sz == 10
+VLD4_s A1b 1111 0100 1 d 10 rn:4 vd:4 10 01 idx:2 0 idx0 xm:4 \
+   !constraints { ($rn != $xm) && ((($d << 4)|$vd) + 3 * (1 + ($idx & 1))) < 32; } \
+   !memory { align(16); reg($rn); }
+
+# only UNDEF case is sz=10, idx<1:0>==11
+VLD4_s A1c 1111 0100 1 d 10 rn:4 vd:4 10 01 idx:2 11 xm:4
