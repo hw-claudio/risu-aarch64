@@ -18,7 +18,7 @@
 int master_connect(uint16_t port);
 int apprentice_connect(const char *hostname, uint16_t port);
 int send_data_pkt(int sock, void *pkt, int pktlen);
-void recv_data_pkt(int sock, void *pkt, int pktlen);
+int recv_data_pkt(int sock, void *pkt, int pktlen);
 void send_response_byte(int sock, int resp);
 
 extern uint32_t image_start_address;

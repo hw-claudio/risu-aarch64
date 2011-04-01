@@ -96,36 +96,93 @@ int master_connect(uint16_t port)
    return nsock;
 }
 
-/* The communication protocol is very simple.
- * The apprentice sends a packet like this:
- *  4 bytes: faulting insn
- *  n bytes: register dump
- * The master replies with a single byte response:
- *  0: ok, continue  [registers matched]
- *  1: exit with status 0 [end of test]
- *  2: exit with status 1 [mismatch, fail]
- *
- * We can handle the variable-length packet at setup
- * (where the apprentice sends command line options,
- * random seed etc) by first sending the length alone
- * as a 4-byte packet, and then a packet of that length.
+/* Utility functions which are just wrappers around read and write
+ * to catch errors and retry on short reads/writes.
  */
-
-int send_data_pkt(int sock, void *pkt, int pktlen)
+static void send_bytes(int sock, void *pkt, int pktlen)
 {
-   unsigned char resp;
    char *p = pkt;
    while (pktlen)
    {
       int i = write(sock, p, pktlen);
       if (i <= 0)
       {
+         if (errno == EINTR)
+         {
+            continue;
+         }
          perror("write failed");
          exit(1);
       }
       pktlen -= i;
       p += i;
    }
+}
+
+static void recv_bytes(int sock, void *pkt, int pktlen)
+{
+   char *p = pkt;
+   while (pktlen)
+   {
+      int i = read(sock, p, pktlen);
+      if (i <= 0)
+      {
+         if (errno == EINTR)
+         {
+            continue;
+         }
+         perror("read failed");
+         exit(1);
+      }
+      pktlen -= i;
+      p += i;
+   }
+}
+
+static void recv_and_discard_bytes(int sock, int pktlen)
+{
+   /* Read and discard bytes */
+   char dumpbuf[64];
+   while (pktlen)
+   {
+      int i;
+      int len = sizeof(dumpbuf);
+      if (len > pktlen)
+      {
+         len = pktlen;
+      }
+      i = read(sock, dumpbuf, len);
+      if (i <= 0)
+      {
+         if (errno == EINTR)
+         {
+            continue;
+         }
+         perror("read failed");
+         exit(1);
+      }
+      pktlen -= i;
+   }
+}
+
+/* Low level comms routines:
+ * send_data_pkt sends a block of data and waits for
+ * a single byte response code.
+ * recv_data_pkt receives a block of data.
+ * send_response_byte sends the response code.
+ * Note that both ends must agree on the length of the
+ * block of data.
+ */
+int send_data_pkt(int sock, void *pkt, int pktlen)
+{
+   unsigned char resp;
+   /* First we send the packet length as a network-order 32 bit value.
+    * This avoids silent deadlocks if the two sides disagree over
+    * what size data packet they are transferring.
+    */
+   uint32_t net_pktlen = htonl(pktlen);
+   send_bytes(sock, &net_pktlen, sizeof(net_pktlen));
+   send_bytes(sock, pkt, pktlen);
    if (read(sock, &resp, 1) != 1)
    {
       perror("read failed");
@@ -134,21 +191,21 @@ int send_data_pkt(int sock, void *pkt, int pktlen)
    return resp;
 }
 
-void recv_data_pkt(int sock, void *pkt, int pktlen)
+int recv_data_pkt(int sock, void *pkt, int pktlen)
 {
-   /* We always read a fixed length packet */ 
-   char *p = pkt;
-   while (pktlen)
+   uint32_t net_pktlen;
+   recv_bytes(sock, &net_pktlen, sizeof(net_pktlen));
+   net_pktlen = ntohl(net_pktlen);
+   if (pktlen != net_pktlen)
    {
-      int i = read(sock, p, pktlen);
-      if (i <= 0)
-      {
-         perror("read failed");
-         exit(1);
-      }
-      pktlen -= i;
-      p += i;
+      /* Mismatch. Read the data anyway so we can send
+       * a response back.
+       */
+      recv_and_discard_bytes(sock, net_pktlen);
+      return 1;
    }
+   recv_bytes(sock, pkt, pktlen);
+   return 0;
 }
 
 void send_response_byte(int sock, int resp)
@@ -158,5 +215,5 @@ void send_response_byte(int sock, int resp)
    {
       perror("write failed");
       exit(1);
-   }   
+   }
 }

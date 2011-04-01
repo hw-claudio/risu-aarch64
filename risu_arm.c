@@ -34,7 +34,7 @@ struct reginfo master_ri, apprentice_ri;
 uint8_t apprentice_memblock[MEMBLOCKLEN];
 
 static int mem_used = 0;
-
+static int packet_mismatch = 0;
 
 static int insnsize(ucontext_t *uc)
 {
@@ -228,8 +228,12 @@ int recv_and_compare_register_info(int sock, void *uc)
          /* Do a simple register compare on (a) explicit request
           * (b) end of test (c) a non-risuop UNDEF
           */
-         recv_data_pkt(sock, &apprentice_ri, sizeof(apprentice_ri));
-         if (memcmp(&master_ri, &apprentice_ri, sizeof(master_ri)) != 0)
+         if (recv_data_pkt(sock, &apprentice_ri, sizeof(apprentice_ri)))
+         {
+            packet_mismatch = 1;
+            resp = 2;
+         }
+         else if (memcmp(&master_ri, &apprentice_ri, sizeof(master_ri)) != 0)
          {
             /* register mismatch */
             resp = 2;
@@ -248,8 +252,12 @@ int recv_and_compare_register_info(int sock, void *uc)
          break;
       case OP_COMPAREMEM:
          mem_used = 1;
-         recv_data_pkt(sock, apprentice_memblock, MEMBLOCKLEN);
-         if (memcmp(memblock, apprentice_memblock, MEMBLOCKLEN) != 0)
+         if (recv_data_pkt(sock, apprentice_memblock, MEMBLOCKLEN))
+         {
+            packet_mismatch = 1;
+            resp = 2;
+         }
+         else if (memcmp(memblock, apprentice_memblock, MEMBLOCKLEN) != 0)
          {
             /* memory mismatch */
             resp = 2;
@@ -320,6 +328,15 @@ int report_match_status(void)
    fprintf(stderr, "match status...\n");
    fprintf(stderr, "master reginfo:\n");
    dump_reginfo(&master_ri);
+   if (packet_mismatch)
+   {
+      fprintf(stderr, "packet mismatch (probably disagreement "
+              "about UNDEF on load/store)\n");
+      /* We don't have valid reginfo from the apprentice side
+       * so stop now rather than printing anything about it.
+       */
+      return 1;
+   }
    fprintf(stderr, "apprentice reginfo:\n");
    dump_reginfo(&apprentice_ri);
    if (memcmp(&master_ri, &apprentice_ri, sizeof(master_ri)) != 0)
