@@ -96,29 +96,9 @@ int master_connect(uint16_t port)
    return nsock;
 }
 
-/* Utility functions which are just wrappers around read and write
+/* Utility functions which are just wrappers around read and writev
  * to catch errors and retry on short reads/writes.
  */
-static void send_bytes(int sock, void *pkt, int pktlen)
-{
-   char *p = pkt;
-   while (pktlen)
-   {
-      int i = write(sock, p, pktlen);
-      if (i <= 0)
-      {
-         if (errno == EINTR)
-         {
-            continue;
-         }
-         perror("write failed");
-         exit(1);
-      }
-      pktlen -= i;
-      p += i;
-   }
-}
-
 static void recv_bytes(int sock, void *pkt, int pktlen)
 {
    char *p = pkt;
@@ -165,6 +145,35 @@ static void recv_and_discard_bytes(int sock, int pktlen)
    }
 }
 
+ssize_t safe_writev(int fd, struct iovec *iov_in, int iovcnt)
+{
+   /* writev, retrying for EINTR and short writes */
+   int r = 0;
+   struct iovec *iov = iov_in;
+   for (;;)
+   {
+      ssize_t i = writev(fd, iov, iovcnt);
+      if (i == -1)
+      {
+         if (errno == EINTR)
+            continue;
+         return -1;
+      }
+      r += i;
+      /* Move forward through iov to account for data transferred */
+      while (i >= iov->iov_len)
+      {
+         i -= iov->iov_len;
+         iov++;
+         iovcnt--;
+         if (iovcnt == 0) {
+            return r;
+         }
+      }
+      iov->iov_len -= i;
+   }
+}
+
 /* Low level comms routines:
  * send_data_pkt sends a block of data and waits for
  * a single byte response code.
@@ -178,11 +187,23 @@ int send_data_pkt(int sock, void *pkt, int pktlen)
    unsigned char resp;
    /* First we send the packet length as a network-order 32 bit value.
     * This avoids silent deadlocks if the two sides disagree over
-    * what size data packet they are transferring.
+    * what size data packet they are transferring. We use writev()
+    * so that both length and packet are sent in one packet; otherwise
+    * we get 300x slowdown because we hit Nagle's algorithm.
     */
    uint32_t net_pktlen = htonl(pktlen);
-   send_bytes(sock, &net_pktlen, sizeof(net_pktlen));
-   send_bytes(sock, pkt, pktlen);
+   struct iovec iov[2];
+   iov[0].iov_base = &net_pktlen;
+   iov[0].iov_len = sizeof(net_pktlen);
+   iov[1].iov_base = pkt;
+   iov[1].iov_len = pktlen;
+
+   if (safe_writev(sock, iov, 2) == -1)
+   {
+      perror("writev failed");
+      exit(1);
+   }
+
    if (read(sock, &resp, 1) != 1)
    {
       perror("read failed");
