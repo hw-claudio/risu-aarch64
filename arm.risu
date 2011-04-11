@@ -51,11 +51,6 @@ VCVT_e A1 cond:4 11101 d 111 op 1 u vd:4 101 sf 0 1 0 0 1000
 VCVT_neon_q0 A1 1111 0011 1 d 11 10 11 vd:4 0 11 op:2 0 m 0 vm:4
 VCVT_neon_q1 A1 1111 0011 1 d 11 10 11 vd:3 0 0 11 op:2 1 m 0 vm:3 0
 
-# VCVT fp to fixed, neon (A8.6.296)
-# split to avoid generating undef case for Q=1, Vd<0> or Vm<0>=1
-VCVT_neon_b_q0 A1 1111 001 u 1 d 1 imm:5 vd:4 111 op 0 0 m 1 vm:4
-VCVT_neon_b_q1 A1 1111 001 u 1 d 1 imm:5 vd:3 0 111 op 0 1 m 1 vm:3 0
-
 # VCVT between double and single (A8.6.298)
 VCVT_298 A1 cond:4 1110 1 d 11 0111 vd:4 101 sz 1 1 m 0 vm:4
 
@@ -75,15 +70,6 @@ VCTV_B_TT A1 cond:4 1110 1 d 11 001 op vd:4 101 0 t 1 m 0 vm:4
 # These patterns should cover all the VQSHL* instructions
 # in their ARM encodings.
 ##########################################################
-
-# VQSHLU: U==0 is UNDEF so don't generate it
-# Q=1 case: Vd<0> or Vm<0> == 1 => UNDEF, so avoid
-# L:imm6 == 0000xxx => some other insn (we use the custom constraint for this)
-VQSHLU_imm_a A1 1111 001 1 1 d imm:6 vd:3 0 011 0 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
-VQSHLU_imm_b A1 1111 001 1 1 d imm:6 vd:4 011 0 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
-# VQSHL imm: undefs as for VQSHLU except that U==0 is OK
-VQSHL_imm_a A1 1111 001 u 1 d imm:6 vd:3 0 011 1 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
-VQSHL_imm_b A1 1111 001 u 1 d imm:6 vd:4 011 1 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
 
 # Q=1: UNDEF if lsbit of vn/vd/vm is 1
 VRSQRTS_a A1 1111 0010 0 d 1 0 vn:3 0 vd:3 0 1111 n 1 m 1 vm:3 0
@@ -179,71 +165,6 @@ PLDW_reg A1 1111 0111 u 001 rn:4 1111 imm:5 type:2 0 rm:4
 # no overlap with PLD_imm because rn can't be 15
 PLD_lit A1 1111 0101 u 101 1111 1111 imm:12
 
-# VSRA
-# L:imm6 == 0000xxx is some other encoding
-# Q=0
-VSRA_a A1 1111 001 u 1 d imm:6 vd:4 0001 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
-# Q=1
-VSRA_b A1 1111 001 u 1 d imm:6 vd:3 0 0001 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
-
-# VSLI
-# Q=0
-VSLI_a A1 1111 0011 1 d imm:6 vd:4 0101 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
-# Q=1
-VSLI_b A1 1111 0011 1 d imm:6 vd:3 0 0101 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
-
-# VSRI
-# Q=0
-VSRI_a A1 1111 0011 1 d imm:6 vd:4 0100 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
-# Q=1
-VSRI_b A1 1111 0011 1 d imm:6 vd:3 0 0100 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
-
-# Various shifts
-
-# Q=0
-VQRSHL_a A1 1111 001 u 0 d sz:2 vn:4 vd:4 0101 n 0 m 1 vm:4
-# Q=1
-VQRSHL_b A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0101 n 1 m 1 vm:3 0
-
-# VQRSHRN, VQRSHRUN, VRSHRN (VRSHRN is the U=0 op=0 case)
-VQRSHRN A1 1111 001 u 1 d imm:6 vd:4 100 op 0 1 m 1 vm:3 0 { (($imm & 0xc8) != 0); }
-
-# Q=0
-VQSHL_a A1 1111 001 u 0 d sz:2 vn:4 vd:4 0100 n 0 m 1 vm:4
-# Q=1
-VQSHL_b A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0100 n 1 m 1 vm:3 0
-
-# VQSHRN, VQSHRUN, VSHRN (VSHRN is the U=0 op=0 case)
-VQSHRN A1 1111 001 u 1 d imm:6 vd:4 100 op 0 0 m 1 vm:3 0 { (($imm & 0xc8) != 0); }
-
-# q=0
-VRSHL_a A1 1111 001 u 0 d sz:2 vn:4 vd:4 0101 n 0 m 0 vm:4
-# q=1
-VRSHL_b A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0101 n 1 m 0 vm:3 0
-
-# VRSHR; q=0
-VRSHR_a A1 1111 001 u 1 d imm:6 vd:4 0010 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
-# q=1
-VRSHR_b A1 1111 001 u 1 d imm:6 vd:3 0 0010 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
-
-# VRSRA; q=0
-VRSRA_a A1 1111 001 u 1 d imm:6 vd:4 0011 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
-# q=1
-VRSRA_b A1 1111 001 u 1 d imm:6 vd:3 0 0011 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
-
-# VSHL (imm); q = 0
-VSHL_a A1 1111 0010 1 d imm:6 vd:4 0101 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
-# q=1
-VSHL_b A1 1111 0010 1 d imm:6 vd:3 0 0101 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
-
-# This includes VMOVL (when shift is 0)
-VSHLL A1 1111 001 u 1 d imm:6 vd:3 0 1010 0 0 m 1 vm:4 { (($imm & 0xc8) != 0); }
-VSHLL A2 1111 0011 1 d 11 sz:2 10 vd:3 0 0011 00 m 0 vm:4 { ($sz != 3); }
-
-# VSHR (q=0)
-VSHR_a A1 1111 001 u 1 d imm:6 vd:4 0000 l 0 m 1 vm:4  { ($l == 1) || (($imm & 0xca) != 0); }
-# q=1
-VSHR_b A1 1111 001 u 1 d imm:6 vd:3 0 0000 l 1 m 1 vm:3 0  { ($l == 1) || (($imm & 0xca) != 0); }
 
 # VQMOVN, VQMOVUN
 # includes VMOVN when op=00
@@ -777,3 +698,26 @@ VRSQRTS A1 1111 0010 0 d 1 sz vn:4 vd:4 1111 n q m 1 vm:4
 # which avoids the UNPREDICTABLE space.
 Vimm A1 1111 001 imm1 1 d 000 imm3:3 vd:4 cmode:4 0 q op 1 imm4:4 \
    !constraints { $imm1 != 0 || $imm3 != 0 || $imm4 != 0 || ($cmode & 0xe) == 0 || ($cmode & 0xe) == 8 || ($cmode & 0xe == 0xe); }
+
+########### Neon 2 regs + shift ###########################
+# Instructions from the Neon "2 regs + shift" space
+# (table A7-12 in DDI0406B)
+# UNDEF cases included (but not generally the ones that
+# fall in gaps in the table).
+# NB L:imm == 0000xxx is in one-reg+modified-imm space.
+###########################################################
+VSHR A1 1111 001 u 1 d imm:6 vd:4 0000 l q m 1 vm:4 { $l != 0 || ($imm & 0x38) != 0; }
+VSRA A1 1111 001 u 1 d imm:6 vd:4 0001 l q m 1 vm:4 { $l != 0 || ($imm & 0x38) != 0; }
+VRSHR A1 1111 001 u 1 d imm:6 vd:4 0010 l q m 1 vm:4 { $l != 0 || ($imm & 0x38) != 0; }
+VRSRA A1 1111 001 u 1 d imm:6 vd:4 0011 l q m 1 vm:4 { $l != 0 || ($imm & 0x38) != 0; }
+VSRI A1 1111 0011 1 d imm:6 vd:4 0100 l q m 1 vm:4 { $l != 0 || ($imm & 0x38) != 0; }
+VSHL_imm A1 1111 0010 1 d imm:6 vd:4 0101 l q m 1 vm:4 { $l != 0 || ($imm & 0x38) != 0; }
+VSLI A1 1111 0011 1 d imm:6 vd:4 0101 l q m 1 vm:4 { $l != 0 || ($imm & 0x38) != 0; }
+VQSHL_imm A1 1111 001 u 1 d imm:6 vd:4 011 op l q m 1 vm:4 { $l != 0 || ($imm & 0x38) != 0; }
+# this includes VSHRN (if U=0 and op=0)
+VQSHRN A1 1111 001 u 1 d imm:6 vd:4 100 op 0 0 m 1 vm:4 { ($imm & 0x38) != 0; }
+# this includes VRSHRN (if U=0 and op=0)
+VQRSHRN A1 1111 001 u 1 d imm:6 vd:4 100 op 0 1 m 1 vm:4  { ($imm & 0x38) != 0; }
+# includes VMOVL where the shift amount is zero
+VSHLL A1 1111 001 u 1 d imm:6 vd:4 1010 0 0 m 1 vm:4 { ($imm & 0x38) != 0; }
+VCVT A1 1111 001 u 1 d imm:6 vd:4 111 op 0 q m 1 vm:4 { ($imm & 0x38) != 0; }
