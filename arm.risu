@@ -710,3 +710,14 @@ VRECPE A1 1111 0011 1 d 11 sz:2 11 vd:4 010 f 0 q m 0 vm:4
 VRSQRTE A1 1111 0011 1 d 11 sz:2 11 vd:4 010 f 1 q m 0 vm:4
 # float to int, neon versions (A8.6.294)
 VCVT_neon A1 1111 0011 1 d 11 sz:2 11 vd:4 0 11 op:2 q m 0 vm:4
+
+########### Neon other ####################################
+# Instructions which have their own entry in the top level
+# Neon data processing instructions decode table A7-8:
+# VEXT, VTBL, VTBX, VDUP (scalar)
+###########################################################
+VEXT A1 1111 0010 1 d 11 vn:4 vd:4 imm:4 n q m 0 vm:4
+# VTBL and VTBX; n + length > 32 is UNPREDICTABLE
+VTBL A1 1111 0011 1 d 11 vn:4 vd:4 1 0 len:2 n op m 0 vm:4 \
+    !constraints { (($n << 4) | $vn) + $len + 1 <= 32; }
+VDUP_scalar A1 1111 0011 1 d 11 imm:4 vd:4 11000 q m 0 vm:4
