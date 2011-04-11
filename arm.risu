@@ -310,6 +310,11 @@ UADD16 A1 cond:4 0110 0101 rn:4 rd:4 1111 0001 rm:4
 USUB8 A1 cond:4 0110 0101 rn:4 rd:4 1111 1111 rm:4
 USUB16 A1 cond:4 0110 0101 rn:4 rd:4 1111 0111 rm:4
 
+# UNDEF cases: op1 == 0 or op2 == 101 or 110
+SADD_UNDEF A1a cond:4 011000 00 any:12 op2:3 1 any2:4
+SADD_UNDEF A1b cond:4 011000 op1:2 any:12 101 1 any2:4
+SADD_UNDEF A1c cond:4 011000 op1:2 any:12 110 1 any2:4
+
 SASX A1 cond:4 0110 0001 rn:4 rd:4 1111 0011 rm:4
 SSAX A1 cond:4 0110 0001 rn:4 rd:4 1111 0101 rm:4
 
@@ -709,3 +714,10 @@ VLDST_UNDEF A1a 1111 0100 0 any:2 0 any2:8 11 type:2 any3:8
 VLDST_UNDEF A1b 1111 0100 0 any:2 0 any2:8 1011 any3:8
 # A = 1 cases: only stores with B=11xx, all else is allocated
 VLDST_UNDEF A1c 1111 0100 1 x 0 0 any:8 11 any2:10
+
+# SUBS PC, LR: these are actually unpredictable...
+#SUBS_PC_LR A1 cond:4 001 0010 1 rn:4 1111 imm:12
+#MOVS_PC_LR A1 cond:4 001 1101 1 rn:4 1111 imm:12
+
+# MLS - v6T2 and later only
+MLS A1 cond:4 00000110 rd:4 ra:4 rm:4 1001 rn:4
