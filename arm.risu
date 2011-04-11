@@ -103,16 +103,6 @@ SSAT A1   cond:4 0110101 satimm:5 rd:4 imm:5 sh 0 1 rn:4
 SSAT16 A1 cond:4 01101010 satimm:4 rd:4 1111 0011 rn:4
 USAT16 A1 cond:4 01101110 satimm:4 rd:4 1111 0011 rn:4
 
-# Scalar forms, VMLAL, VMLSL, VQDMLAL, VQDMLSL, VMULL, VQDMULL
-# VMLAL/VMLSL scalar
-VMLAL_scalar A2 1111 001 u 1 d sz:2 vn:4 vd:3 0 0 op 1 0 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
-# VQDMLAL/VQDMLSL scalar
-VQDMLAL_scalar A2 1111 0010 1 d sz:2 vn:4 vd:3 0 0 op 11 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
-# VMULL scalar
-VMULL_scalar A2 1111 001 u 1 d sz:2 vn:4 vd:3 0 1010 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
-# VQDMULL scalar
-VQDMULL_scalar A2 1111 0010 1 d sz:2 vn:4 vd:3 0 1011 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
-
 # Neon saturating add/sub
 # VQADD VQSUB
 # Q=1 case:
@@ -122,17 +112,6 @@ VQADD_b A1 1111 001 u 0 d sz:2 vn:4 vd:4 0000 n 0 m 1 vm:4
 # VQSUB
 VQSUB_a A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0010 n 1 m 1 vm:3 0
 VQSUB_b A1 1111 001 u 0 d sz:2 vn:4 vd:4 0010 n 0 m 1 vm:4
-
-# VQ(R)DMULH: vector saturating (rounding) doubling multiply returning high half
-# scalar form Q=1
-VQDMULH_a A2 1111 001 1 1 d sz:2 vn:3 0 vd:3 0 1100 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
-# scalar, Q=0
-VQDMULH_b A2 1111 001 0 1 d sz:2 vn:4 vd:4 1100 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
-
-# scalar form Q=1
-VQRDMULH_a A2 1111 001 1 1 d sz:2 vn:3 0 vd:3 0 1100 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
-# scalar, Q=0
-VQRDMULH_b A2 1111 001 0 1 d sz:2 vn:4 vd:4 1101 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
 
 # various preload and hint instructions
 # see table A5-24 for this unallocated hint insn block (must NOP on v7MP)
@@ -726,3 +705,23 @@ VQDMLAL A1 1111 0010 1 d sz:2 vn:4 vd:4 10 0 1 n 0 m 0 vm:4 { $sz != 3; }
 VQDMLSL A1 1111 0010 1 d sz:2 vn:4 vd:4 10 1 1 n 0 m 0 vm:4 { $sz != 3; }
 VMULL A2 1111 001 u 1 d sz:2 vn:4 vd:4 11 op 0 n 0 m 0 vm:4 { $sz != 3; }
 VQDMULL A1 1111 0010 1 d sz:2 vn:4 vd:4 1101 n 0 m 0 vm:4 { $sz != 3; }
+
+########### Neon 2 regs + scalar ##########################
+# Instructions from the Neon "2 regs + scalar" space
+# (table A7-11 in DDI0406B)
+# UNDEF cases included.
+# sz = 11 is in vext/vtbl/vtbx/vdup/2reg-misc space.
+###########################################################
+# includes float variants
+VMLA_scalar A1 1111 001 q 1  d sz:2 vn:4 vd:4 0 0 0 f n 1 m 0 vm:4 { $sz != 3; }
+VMLS_scalar A1 1111 001 q 1  d sz:2 vn:4 vd:4 0 1 0 f n 1 m 0 vm:4 { $sz != 3; }
+VMLAL_scalar A2 1111 001 u 1 d sz:2 vn:4 vd:4 0 0 1 0 n 1 m 0 vm:4 { $sz != 3; }
+VMLSL_scalar A2 1111 001 u 1 d sz:2 vn:4 vd:4 0 1 1 0 n 1 m 0 vm:4 { $sz != 3; }
+VQDMLAL_scalar A2 1111 0010 1 d sz:2 vn:4 vd:4 0 0 11 n 1 m 0 vm:4 { $sz != 3; }
+VQDMLSL_scalar A2 1111 0010 1 d sz:2 vn:4 vd:4 0 1 11 n 1 m 0 vm:4 { $sz != 3; }
+VMUL_scalar A1 1111 001 q 1 d sz:2 vn:4 vd:4 100 f n 1 m 0 vm:4 { $sz != 3; }
+VMULL_scalar A2 1111 001 u 1 d sz:2 vn:4 vd:4 1010 n 1 m 0 vm:4 { $sz != 3; }
+VQDMULL_scalar A2 1111 0010 1 d sz:2 vn:4 vd:4 1011 n 1 m 0 vm:4 { $sz != 3; }
+VQDMULH_scalar A2 1111 001 q 1 d sz:2 vn:4 vd:4 1100 n 1 m 0 vm:4 { $sz != 3; }
+VQRDMULH_scalar A2 1111 001 q 1 d sz:2 vn:4 vd:4 1101 n 1 m 0 vm:4 { $sz != 3; }
+
