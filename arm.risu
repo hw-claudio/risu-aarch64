@@ -76,11 +76,6 @@ VCTV_B_TT A1 cond:4 1110 1 d 11 001 op vd:4 101 0 t 1 m 0 vm:4
 # in their ARM encodings.
 ##########################################################
 
-# VQSHL reg: two patterns to avoid the UNDEF case for
-# Q==1 and lsbit of vd/vn/vm!=0
-VQSHL_reg_a A1 1111 001 u 0 d sz:2 vn:4 vd:4 0100 n 0 m 1 vm:4
-VQSHL_reg_b A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0100 n 1 m 1 vm:3 0
-
 # VQSHLU: U==0 is UNDEF so don't generate it
 # Q=1 case: Vd<0> or Vm<0> == 1 => UNDEF, so avoid
 # L:imm6 == 0000xxx => some other insn (we use the custom constraint for this)
@@ -161,18 +156,11 @@ VQSUB_a A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0010 n 1 m 1 vm:3 0
 VQSUB_b A1 1111 001 u 0 d sz:2 vn:4 vd:4 0010 n 0 m 1 vm:4
 
 # VQ(R)DMULH: vector saturating (rounding) doubling multiply returning high half
-# Q=1 case:
-VQDMULH_a A1 1111 0010 0 d sz:2 vn:3 0 vd:3 0 1011 n 1 m 0 vm:3 0 { ($sz != 3) && ($sz != 0); }
-# Q=0:
-VQDMULH_b A1 1111 0010 0 d sz:2 vn:4 vd:4 1011 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
 # scalar form Q=1
 VQDMULH_a A2 1111 001 1 1 d sz:2 vn:3 0 vd:3 0 1100 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
 # scalar, Q=0
 VQDMULH_b A2 1111 001 0 1 d sz:2 vn:4 vd:4 1100 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
 
-VQRDMULH_a A1 1111 0011 0 d sz:2 vn:3 0 vd:3 0 1011 n 1 m 0 vm:3 0 { ($sz != 3) && ($sz != 0); }
-# Q=0:
-VQRDMULH_b A1 1111 0011 0 d sz:2 vn:4 vd:4 1011 n 0 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
 # scalar form Q=1
 VQRDMULH_a A2 1111 001 1 1 d sz:2 vn:3 0 vd:3 0 1100 n 1 m 0 vm:4 { ($sz != 3) && ($sz != 0); }
 # scalar, Q=0
@@ -247,11 +235,6 @@ VRSRA_b A1 1111 001 u 1 d imm:6 vd:3 0 0011 l 1 m 1 vm:3 0 { ($l == 1) || (($imm
 VSHL_a A1 1111 0010 1 d imm:6 vd:4 0101 l 0 m 1 vm:4 { ($l == 1) || (($imm & 0xca) != 0); }
 # q=1
 VSHL_b A1 1111 0010 1 d imm:6 vd:3 0 0101 l 1 m 1 vm:3 0 { ($l == 1) || (($imm & 0xca) != 0); }
-
-# VSHL (reg): q=0
-VSHL_c A1 1111 001 u 0 d sz:2 vn:4 vd:4 0100 n 0 m 0 vm:4
-# q=1
-VSHL_d A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0100 n 1 m 0 vm:3 0
 
 # This includes VMOVL (when shift is 0)
 VSHLL A1 1111 001 u 1 d imm:6 vd:3 0 1010 0 0 m 1 vm:4 { (($imm & 0xc8) != 0); }
@@ -721,3 +704,63 @@ VLDST_UNDEF A1c 1111 0100 1 x 0 0 any:8 11 any2:10
 
 # MLS - v6T2 and later only
 MLS A1 cond:4 00000110 rd:4 ra:4 rm:4 1001 rn:4
+
+########### Neon 3 reg same length ########################
+# Instructions from the Neon "3 register same length"
+# space (table A7-9 in DDI0406B)
+# We include UNDEF combinations here; there are no
+# UNPREDICTABLE encodings we need to avoid.
+###########################################################
+
+VHADD A1 1111 001 u 0 d sz:2 vn:4 vd:4 0000 n q m 0 vm:4
+VHSUB A1 1111 001 u 0 d sz:2 vn:4 vd:4 0010 n q m 0 vm:4
+VQADD A1 1111 001 u 0 d sz:2 vn:4 vd:4 0000 n q m 1 vm:4
+VRHADD A1 1111 001 u 0 d sz:2 vn:4 vd:4 0001 n q m 0 vm:4
+VAND A1 1111 0010 0 d 00 vn:4 vd:4 0001 n q m 1 vm:4
+VBIC A1 1111 0010 0 d 01 vn:4 vd:4 0001 n q m 1 vm:4
+# includes what the ARM ARM calls VMOV T1/A1, which is just VORR with vn=vm
+VORR A1 1111 0010 0 d 10 vn:4 vd:4 0001 n q m 1 vm:4
+VORN A1 1111 0010 0 d 11 vn:4 vd:4 0001 n q m 1 vm:4
+# VEOR, VBIF, VBIT and VBSL:
+VEOR_VBIT A1 1111 0011 0 d op:2 vn:4 vd:4 0001 n q m 1 vm:4
+VQSUB A1 1111 001 u 0 d sz:2 vn:4 vd:4 0010 n q m 1 vm:4
+VCGT A1 1111 001 u 0 d sz:2 vn:4 vd:4 0011 n q m 0 vm:4
+VCGT A2 1111 0011 0 d 1 sz vn:4 vd:4 1110 n q m 0 vm:4
+VCGE A1 1111 001 u 0 d sz:2 vn:4 vd:4 0011 n q m 1 vm:4
+VCGE A2 1111 0011 0 d 0 sz vn:4 vd:4 1110 n q m 0 vm:4
+VSHL A1 1111 001 u 0 d sz:2 vn:4 vd:4 0100 n q m 0 vm:4
+VQSHL A1 1111 001 u 0 d sz:2 vn:4 vd:4 0100 n q m 1 vm:4
+VRSHL A1 1111 001 u 0 d sz:2 vn:4 vd:4 0101 n q m 0 vm:4
+VQRSHL A1 1111 001 u 0 d sz:2 vn:4 vd:4 0101 n q m 1 vm:4
+VMAX A1 1111 001 u 0 d sz:2 vn:4 vd:4 0110 n q m 0 vm:4
+VMIN A1 1111 001 u 0 d sz:2 vn:4 vd:4 0110 n q m 1 vm:4
+VABD A1 1111 001 u 0 d sz:2 vn:4 vd:4 0111 n q m 0 vm:4
+VABA A1 1111 001 u 0 d sz:2 vn:4 vd:4 0111 n q m 1 vm:4
+VADD A1 1111 0010 0 d sz:2 vn:4 vd:4 1000 n q m 0 vm:4
+VSUB A1 1111 0011 0 d sz:2 vn:4 vd:4 1000 n q m 0 vm:4
+VTST A1 1111 0010 0 d sz:2 vn:4 vd:4 1000 n q m 1 vm:4
+VCEQ A1 1111 0011 0 d sz:2 vn:4 vd:4 1000 n q m 1 vm:4
+VCEQ A2 1111 0010 0 d 0 sz vn:4 vd:4 1110 n q m 0 vm:4
+VMLA A1 1111 001 op 0 d sz:2 vn:4 vd:4 1001 n q m 0 vm:4
+VMUL A1 1111 001 op 0 d sz:2 vn:4 vd:4 1001 n q m 1 vm:4
+VPMAX A1 1111 001 u 0 d sz:2 vn:4 vd:4 1010 n q m 0 vm:4
+VPMIN A1 1111 001 u 0 d sz:2 vn:4 vd:4 1010 n q m 1 vm:4
+VQDMULH A1 1111 0010 0 d sz:2 vn:4 vd:4 1011 n q m 0 vm:4
+VQRDMULH A1 1111 0011 0 d sz:2 vn:4 vd:4 1011 n q m 0 vm:4
+VPADD A1 1111 0010 0 d sz:2 vn:4 vd:4 1011 n q m 1 vm:4
+VADD_float A1 1111 0010 0 d 0 sz vn:4 vd:4 1101 n q m 0 vm:4
+VSUB_float A1 1111 0010 0 d 1 sz vn:4 vd:4 1101 n q m 0 vm:4
+VPADD_float A1 1111 0011 0 d 0 sz vn:4 vd:4 1101 n q m 0 vm:4
+VABD_float A1 1111 0011 0 d 1 sz vn:4 vd:4 1101 n q m 0 vm:4
+VMLA_float A1 1111 0010 0 d 0 sz vn:4 vd:4 1101 n q m 1 vm:4
+VMLS_float A1 1111 0010 0 d 1 sz vn:4 vd:4 1101 n q m 1 vm:4
+VMUL_float A1 1111 0011 0 d 0 sz vn:4 vd:4 1101 n q m 1 vm:4
+VACGE A1 1111 0011 0 d 0 sz vn:4 vd:4 1110 n q m 1 vm:4
+VACGT A1 1111 0011 0 d 1 sz vn:4 vd:4 1110 n q m 1 vm:4
+VMAX_float A1 1111 0010 0 d 0 sz vn:4 vd:4 1111 n q m 0 vm:4
+VMIN_float A1 1111 0010 0 d 1 sz vn:4 vd:4 1111 n q m 0 vm:4
+VPMAX_float A1 1111 0011 0 d 0 sz vn:4 vd:4 1111 n q m 0 vm:4
+VPMIN_float A1 1111 0011 0 d 1 sz vn:4 vd:4 1111 n q m 0 vm:4
+VRECPS A1 1111 0010 0 d 0 sz vn:4 vd:4 1111 n q m 1 vm:4
+VRSQRTS A1 1111 0010 0 d 1 sz vn:4 vd:4 1111 n q m 1 vm:4
+
