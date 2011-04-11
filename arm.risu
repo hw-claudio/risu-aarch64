@@ -52,15 +52,6 @@ VCVT_298 A1 cond:4 1110 1 d 11 0111 vd:4 101 sz 1 1 m 0 vm:4
 VCTV_B_TT A1 cond:4 1110 1 d 11 001 op vd:4 101 0 t 1 m 0 vm:4
 
 
-########### VQSHL ########################################
-# These patterns should cover all the VQSHL* instructions
-# in their ARM encodings.
-##########################################################
-
-# Q=1: UNDEF if lsbit of vn/vd/vm is 1
-VRSQRTS_a A1 1111 0010 0 d 1 0 vn:3 0 vd:3 0 1111 n 1 m 1 vm:3 0
-VRSQRTS_b A1 1111 0010 0 d 1 0 vn:4 vd:4 1111 n 0 m 1 vm:4
-
 # various 32x32->64 multiplies
 # we omit the v5-and-below constraint that rn must not be rdhi or rdlo
 UMAAL A1 cond:4 0000 0100 rdhi:4 rdlo:4 rm:4 1001 rn:4 { $rdhi != $rdlo; }
@@ -88,16 +79,6 @@ USAT A1   cond:4 0110111 satimm:5 rd:4 imm:5 sh 0 1 rn:4
 SSAT A1   cond:4 0110101 satimm:5 rd:4 imm:5 sh 0 1 rn:4
 SSAT16 A1 cond:4 01101010 satimm:4 rd:4 1111 0011 rn:4
 USAT16 A1 cond:4 01101110 satimm:4 rd:4 1111 0011 rn:4
-
-# Neon saturating add/sub
-# VQADD VQSUB
-# Q=1 case:
-VQADD_a A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0000 n 1 m 1 vm:3 0
-# Q=0:
-VQADD_b A1 1111 001 u 0 d sz:2 vn:4 vd:4 0000 n 0 m 1 vm:4
-# VQSUB
-VQSUB_a A1 1111 001 u 0 d sz:2 vn:3 0 vd:3 0 0010 n 1 m 1 vm:3 0
-VQSUB_b A1 1111 001 u 0 d sz:2 vn:4 vd:4 0010 n 0 m 1 vm:4
 
 # various preload and hint instructions
 # see table A5-24 for this unallocated hint insn block (must NOP on v7MP)
@@ -143,58 +124,17 @@ SADD_UNDEF A1c cond:4 011000 op1:2 any:12 110 1 any2:4
 SASX A1 cond:4 0110 0001 rn:4 rd:4 1111 0011 rm:4
 SSAX A1 cond:4 0110 0001 rn:4 rd:4 1111 0101 rm:4
 
-# vector duplicate (scalar)
-# Q=1 case
-VDUP_scalar A1a 1111 0011 1 d 11 imm:4 vd:3 0 110 00 1 m 0 vm:4 { ($imm & 7) != 0; }
-# Q=0 case
-VDUP_scalar A1b 1111 0011 1 d 11 imm:4 vd:4 110 00 0 m 0 vm:4 { ($imm & 7) != 0; }
+# SUBS PC, LR: these are actually unpredictable...
+#SUBS_PC_LR A1 cond:4 001 0010 1 rn:4 1111 imm:12
+#MOVS_PC_LR A1 cond:4 001 1101 1 rn:4 1111 imm:12
+
+# MLS - v6T2 and later only
+MLS A1 cond:4 00000110 rd:4 ra:4 rm:4 1001 rn:4
+
 # vector duplicate (reg)
 # b:e == 11 UNDEF
 VDUP A1a cond:4 1110 1 b 1 0 vd:3 0 rt:4 1011 d 0 e 1 0000 { ($b == 0) || ($e == 0); }
 VDUP A1b cond:4 1110 1 b 0 0 vd:4 rt:4 1011 d 0 e 1 0000 { ($b == 0) || ($e == 0); }
-
-########### Neon float ops ###############################
-# These patterns cover the Neon instructions which handle
-# floating-point data (but not the versions of the insns
-# which do integer data, or the VFP versions).
-##########################################################
-
-# Neon float ops:
-# VMAX, VMIN Q=0
-VMAXMIN_fp A1a 1111 0010 0 d op 0 vn:4 vd:4 1111 n 0 m 0 vm:4
-# Q=1
-VMAXMIN_fp A1b 1111 0010 0 d op 0 vn:3 0 vd:3 0 1111 n 1 m 0 vm:3 0
-
-# VABD Q=0
-VABD_fp A1a 1111 0011 0 d 1 0 vn:4 vd:4 1101 n 0 m 0 vm:4
-# Q=1
-VABD_fp A1b 1111 0011 0 d 1 0 vn:3 0 vd:3 0 1101 n 1 m 0 vm:3 0
-
-# VADD Q=0, Q=1
-VADD A1a 1111 0010 0 d 0 0 vn:4 vd:4 1101 n 0 m 0 vm:4
-VADD A1b 1111 0010 0 d 0 0 vn:3 0 vd:3 0 1101 n 1 m 0 vm:3 0
-# VSUB
-VSUB A1a 1111 0010 0 d 1 0 vn:4 vd:4 1101 n 0 m 0 vm:4
-VSUB A1b 1111 0010 0 d 1 0 vn:3 0 vd:3 0 1101 n 1 m 0 vm:3 0
-# VMUL
-VMUL A1a 1111 0011 0 d 0 0 vn:4 vd:4 1101 n 0 m 1 vm:4
-VMUL A1b 1111 0011 0 d 0 0 vn:3 0 vd:3 0 1101 n 1 m 1 vm:3 0
-# VCEQ, VCGE, VCGT
-VCEQ A2a 1111 0010 0 d 0 0 vn:4 vd:4 1110 n 0 m 0 vm:4
-VCEQ A2b 1111 0010 0 d 0 0 vn:3 0 vd:3 0 1110 n 1 m 0 vm:3 0
-VCGE A2a 1111 0011 0 d 0 0 vn:4 vd:4 1110 n 0 m 0 vm:4
-VCGE A2b 1111 0011 0 d 0 0 vn:3 0 vd:3 0 1110 n 1 m 0 vm:3 0
-VCGT A2a 1111 0011 0 d 1 0 vn:4 vd:4 1110 n 0 m 0 vm:4
-VCGT A2b 1111 0011 0 d 1 0 vn:3 0 vd:3 0 1110 n 1 m 0 vm:3 0
-
-# VACGE, VACGT
-VACG A1a 1111 0011 0 d op 0 vn:4 vd:4 1110 n 0 m 1 vm:4
-VACG A1b 1111 0011 0 d op 0 vn:3 0 vd:3 0 1110 n 1 m 1 vm:3 0
-
-
-# VRECPS: Q=0, Q=1 cases
-VRECPS A1a 1111 0010 0 d 0 0 vn:4 vd:4 1111 n 0 m 1 vm:4
-VRECPS A1b 1111 0010 0 d 0 0 vn:3 0 vd:3 0 1111 n 1 m 1 vm:3 0
 
 ########### Neon loads and stores #########################
 # These patterns cover all the Neon element/structure
@@ -529,12 +469,12 @@ VLDST_UNDEF A1b 1111 0100 0 any:2 0 any2:8 1011 any3:8
 # A = 1 cases: only stores with B=11xx, all else is allocated
 VLDST_UNDEF A1c 1111 0100 1 x 0 0 any:8 11 any2:10
 
-# SUBS PC, LR: these are actually unpredictable...
-#SUBS_PC_LR A1 cond:4 001 0010 1 rn:4 1111 imm:12
-#MOVS_PC_LR A1 cond:4 001 1101 1 rn:4 1111 imm:12
-
-# MLS - v6T2 and later only
-MLS A1 cond:4 00000110 rd:4 ra:4 rm:4 1001 rn:4
+########### Neon Data Processing ##########################
+# The following sets of patterns cover the whole of the
+# "Advanced SIMD data-processing instructions" space
+# as described in DDI0406B table A7-8 and the subtables
+# it refers to.
+###########################################################
 
 ########### Neon 3 reg same length ########################
 # Instructions from the Neon "3 register same length"
@@ -721,3 +661,7 @@ VEXT A1 1111 0010 1 d 11 vn:4 vd:4 imm:4 n q m 0 vm:4
 VTBL A1 1111 0011 1 d 11 vn:4 vd:4 1 0 len:2 n op m 0 vm:4 \
     !constraints { (($n << 4) | $vn) + $len + 1 <= 32; }
 VDUP_scalar A1 1111 0011 1 d 11 imm:4 vd:4 11000 q m 0 vm:4
+
+###########################################################
+# End of Neon Data Processing instruction patterns.
+###########################################################
