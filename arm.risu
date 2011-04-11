@@ -764,3 +764,16 @@ VPMIN_float A1 1111 0011 0 d 1 sz vn:4 vd:4 1111 n q m 0 vm:4
 VRECPS A1 1111 0010 0 d 0 sz vn:4 vd:4 1111 n q m 1 vm:4
 VRSQRTS A1 1111 0010 0 d 1 sz vn:4 vd:4 1111 n q m 1 vm:4
 
+########### Neon 1 reg + modified immediate ###############
+# Instructions from the Neon "1 reg + modified immediate"
+# space (table A7-14 in DDI0406B)
+# We include UNDEF combinations here. There are some
+# UNPREDICTABLEs in the constant encoding:
+# abcdefgh == 0 and cmode == 001x 010x 011x 101x 110x
+###########################################################
+# We don't try to break these down into the separate
+# VMOV, VORR, VMVN, VBIC ops (which are encoded in 'op'
+# and 'cmode'); we just have a single pattern with a constraint
+# which avoids the UNPREDICTABLE space.
+Vimm A1 1111 001 imm1 1 d 000 imm3:3 vd:4 cmode:4 0 q op 1 imm4:4 \
+   !constraints { $imm1 != 0 || $imm3 != 0 || $imm4 != 0 || ($cmode & 0xe) == 0 || ($cmode & 0xe) == 8 || ($cmode & 0xe == 0xe); }
