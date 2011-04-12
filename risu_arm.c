@@ -326,8 +326,6 @@ int report_match_status(void)
 {
    int resp = 0;
    fprintf(stderr, "match status...\n");
-   fprintf(stderr, "master reginfo:\n");
-   dump_reginfo(&master_ri);
    if (packet_mismatch)
    {
       fprintf(stderr, "packet mismatch (probably disagreement "
@@ -335,10 +333,10 @@ int report_match_status(void)
       /* We don't have valid reginfo from the apprentice side
        * so stop now rather than printing anything about it.
        */
+      fprintf(stderr, "master reginfo:\n");
+      dump_reginfo(&master_ri);
       return 1;
    }
-   fprintf(stderr, "apprentice reginfo:\n");
-   dump_reginfo(&apprentice_ri);
    if (memcmp(&master_ri, &apprentice_ri, sizeof(master_ri)) != 0)
    {
       fprintf(stderr, "mismatch on regs!\n");
@@ -354,6 +352,11 @@ int report_match_status(void)
       fprintf(stderr, "match!\n");
       return 0;
    }
+
+   fprintf(stderr, "master reginfo:\n");
+   dump_reginfo(&master_ri);
+   fprintf(stderr, "apprentice reginfo:\n");
+   dump_reginfo(&apprentice_ri);
 
    report_mismatch_detail(&master_ri, &apprentice_ri);
    return resp;
