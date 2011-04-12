@@ -127,11 +127,22 @@ static void fill_reginfo_vfp(struct reginfo *ri, ucontext_t *uc)
                ri->fpregs[i] = *rs++;
                ri->fpregs[i] |= (uint64_t)(*rs++) << 32;
             }
-            /* Ignore the UNK/SBZP bits. Also ignore the cumulative exception
-             * flags for the moment, because nobody actually cares about them
-             * and qemu certainly gets them wrong...
+            /* Ignore the UNK/SBZP bits. We also ignore the cumulative
+             * exception bits unless we were specifically asked to test
+             * them on the risu command line -- too much of qemu gets
+             * them wrong and they aren't actually very important.
              */
-            ri->fpscr = (*rs) & 0xffff9f00;
+            ri->fpscr = (*rs) & 0xffff9f9f;
+            if (!test_fp_exc) {
+               ri->fpscr &= ~0x9f;
+            }
+            /* Clear the cumulative exception flags. This is a bit
+             * unclean, but makes sense because otherwise we'd have to
+             * insert explicit bit-clearing code in the generated code
+             * to avoid the test becoming useless once all the bits
+             * get set.
+             */
+            (*rs) &= ~0x9f;
             return;
          }
          default:

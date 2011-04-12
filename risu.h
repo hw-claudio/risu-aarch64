@@ -25,6 +25,8 @@ extern uint32_t image_start_address;
 
 extern uint8_t *memblock;
 
+extern int test_fp_exc;
+
 /* Ops code under test can request from risu: */
 #define OP_COMPARE 0
 #define OP_TESTEND 1

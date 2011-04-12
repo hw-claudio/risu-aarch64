@@ -38,6 +38,9 @@ int apprentice_socket, master_socket;
 
 sigjmp_buf jmpbuf;
 
+/* Should we test for FP exception status bits? */
+int test_fp_exc = 0;
+
 void master_sigill(int sig, siginfo_t *si, void *uc)
 {
    switch (recv_and_compare_register_info(master_socket, uc))
@@ -163,6 +166,7 @@ int main(int argc, char **argv)
             { "master", no_argument, &ismaster, 1 },
             { "host", required_argument, 0, 'h' },
             { "port", required_argument, 0, 'p' },
+            { "test-fp-exc", no_argument, &test_fp_exc, 1 },
             { 0,0,0,0 }
          };
       int optidx = 0;
