@@ -94,6 +94,8 @@ SSAX A1 cond:4 0110 0001 rn:4 rd:4 1111 0101 rm:4
 # MLS - v6T2 and later only
 MLS A1 cond:4 00000110 rd:4 ra:4 rm:4 1001 rn:4
 
+REVSH A1 cond:4 01101 111 1111 rd:4 1111 1011 rm:4
+
 # vector duplicate (reg)
 # b:e == 11 UNDEF
 VDUP A1a cond:4 1110 1 b 1 0 vd:3 0 rt:4 1011 d 0 e 1 0000 { ($b == 0) || ($e == 0); }
