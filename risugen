@@ -362,7 +362,7 @@ sub is_pow_of_2($)
 sub write_memblock_setup()
 {
     # Write code which sets up the memory block for loads and stores.
-    # We just need to set r0 to point to a block of at least 8K length
+    # We just need to set r0 to point to a block of at least 2K length
     # of random data, aligned to the maximum desired alignment (32).
     write_switch_to_arm();
 
@@ -439,7 +439,10 @@ sub write_get_offset()
 {
     # Emit code to get a random offset within the memory block, of the
     # right alignment, into r0
-    my $offset = rand(2048) & ~($alignment_restriction - 1);
+    # We require the offset to not be within 256 bytes of either
+    # end, to (more than) allow for the worst case data transfer, which is
+    # 16 * 64 bit regs
+    my $offset = (rand(2048 - 512) + 256) & ~($alignment_restriction - 1);
     write_mov_ri(0, $offset);
     write_risuop($OP_GETMEMBLOCK);
 }
