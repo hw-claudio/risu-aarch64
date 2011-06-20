@@ -721,5 +721,37 @@ VSTM A2b cond:4 110 p 0 d w 0 rn:4 vd:4 1010 00 imm:6  \
 VSTM A1c cond:4 110 p u d 1 0 rn:4 vd:4 101 x imm:8 !constraints { $p == $u; }
 
 # VLDM
+VLDM A1a cond:4 110 p 1 d w 1 rn:4 vd:4 1011 00 imm:5 x \
+ !constraints { $p != 1 && $imm != 0 && $imm <= 16 && ((($d << 4) | $vd) + $imm) <= 32; } \
+ !memory { reg($rn); }
+# predecrement (U == 0)
+VLDM A1b cond:4 110 p 0 d w 1 rn:4 vd:4 1011 00 imm:5 x \
+ !constraints { $p == 1 && $w == 1 && $imm != 0 && $imm <= 16 && ((($d << 4) | $vd) + $imm) <= 32; } \
+ !memory { reg_minus_imm($rn, $imm * 8); }
+# VLDM of 32 bit regs
+# postincrement (U == 1)
+VLDM A2a cond:4 110 p 1 d w 1 rn:4 vd:4 1010 00 imm:6  \
+ !constraints { $p != 1 && $imm != 0 &&  ((($vd << 1) | $d) + $imm) <= 32; } \
+ !memory { reg($rn); }
+# predecrement (U == 0)
+VLDM A2b cond:4 110 p 0 d w 1 rn:4 vd:4 1010 00 imm:6  \
+ !constraints { $p == 1 && $w == 1 && $imm != 0 &&  ((($vd << 1) | $d) + $imm) <= 32; } \
+ !memory { reg_minus_imm($rn, $imm * 8); }
+# UNDEF cases for both A1 and A2:  P==U && W==1
+VLDM A1c cond:4 110 p u d 1 1 rn:4 vd:4 101 x imm:8 !constraints { $p == $u; }
+
 # VSTR
+# both A1 and A2 encodings, U = 1
+VSTR A1a cond:4 1101 1 d 00 rn:4 vd:4 101 x imm:8 \
+ !memory { reg_plus_imm($rn, $imm * 4); }
+# both A1 and A2 encodings, U = 0
+VSTR A1b cond:4 1101 1 d 00 rn:4 vd:4 101 x imm:8 \
+ !memory { reg_minus_imm($rn, $imm * 4); }
+
 # VLDR
+# both A1 and A2 encodings, U = 1
+VLDR A1a cond:4 1101 1 d 01 rn:4 vd:4 101 x imm:8 \
+ !memory { reg_plus_imm($rn, $imm * 4); }
+# both A1 and A2 encodings, U = 0
+VLDR A1b cond:4 1101 1 d 01 rn:4 vd:4 101 x imm:8 \
+ !memory { reg_minus_imm($rn, $imm * 4); }
