@@ -685,3 +685,41 @@ VCVT_e A1 cond:4 11101 d 111 op 1 u vd:4 101 sf 0 1 0 0 1000
 # opc1 1x11 opc2 0111 opc3 01
 # opc1 1x11 opc2 1001 opc3 x1
 
+########### Extension register load/store #################
+# The following sets of patterns cover:
+#  'extension register load/store insns' (A7.6)
+# Still TODO:
+#  '8, 16 and 32 bit transfers' (A7.8)
+#  '64 bit transfers (A7.9)
+# as described in DDI0406B
+###########################################################
+
+# Note that the ARM ARM treats VPUSH/VPOP as special cases
+# but in fact they are the same as VLDM/VSTM
+# VSTM of 64 bit regs
+# NB that the constraints on imm are to avoid UNPREDICTABLEs.
+# We force the high bits of imm to 0 in the pattern to avoid
+# pointlessly generating things that fail the constraint anyway.
+# postincrement (U == 1)
+VSTM A1a cond:4 110 p 1 d w 0 rn:4 vd:4 1011 00 imm:5 x \
+ !constraints { $p != 1 && $imm != 0 && $imm <= 16 && ((($d << 4) | $vd) + $imm) <= 32; } \
+ !memory { reg($rn); }
+# predecrement (U == 0)
+VSTM A1b cond:4 110 p 0 d w 0 rn:4 vd:4 1011 00 imm:5 x \
+ !constraints { $p == 1 && $w == 1 && $imm != 0 && $imm <= 16 && ((($d << 4) | $vd) + $imm) <= 32; } \
+ !memory { reg_minus_imm($rn, $imm * 8); }
+# VSTM of 32 bit regs
+# postincrement (U == 1)
+VSTM A2a cond:4 110 p 1 d w 0 rn:4 vd:4 1010 00 imm:6  \
+ !constraints { $p != 1 && $imm != 0 &&  ((($vd << 1) | $d) + $imm) <= 32; } \
+ !memory { reg($rn); }
+# predecrement (U == 0)
+VSTM A2b cond:4 110 p 0 d w 0 rn:4 vd:4 1010 00 imm:6  \
+ !constraints { $p == 1 && $w == 1 && $imm != 0 &&  ((($vd << 1) | $d) + $imm) <= 32; } \
+ !memory { reg_minus_imm($rn, $imm * 8); }
+# UNDEF cases for both A1 and A2:  P==U && W==1
+VSTM A1c cond:4 110 p u d 1 0 rn:4 vd:4 101 x imm:8 !constraints { $p == $u; }
+
+# VLDM
+# VSTR
+# VLDR
