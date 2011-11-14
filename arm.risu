@@ -38,6 +38,11 @@ SMUSD A1 cond:4 0111 0000 rd:4 1111 rm:4 01 m 1 rn:4
 SMLALD A1 cond:4 0111 0100 rdhi:4 rdlo:4 rm:4 00 m 1 rn:4 { $rdhi != $rdlo; }
 SMLSLD A1 cond:4 0111 0100 rdhi:4 rdlo:4 rm:4 01 m 1 rn:4 { $rdhi != $rdlo; }
 
+# divide (A15 and above only!)
+SDIV A1 cond:4 01110 001 rd:4 1111 rm:4 000 1 rn:4
+UDIV A1 cond:4 01110 011 rd:4 1111 rm:4 000 1 rn:4
+
+
 USAT A1   cond:4 0110111 satimm:5 rd:4 imm:5 sh 0 1 rn:4
 SSAT A1   cond:4 0110101 satimm:5 rd:4 imm:5 sh 0 1 rn:4
 SSAT16 A1 cond:4 01101010 satimm:4 rd:4 1111 0011 rn:4
@@ -484,6 +489,8 @@ VPMIN A1 1111 001 u 0 d sz:2 vn:4 vd:4 1010 n q m 1 vm:4
 VQDMULH A1 1111 0010 0 d sz:2 vn:4 vd:4 1011 n q m 0 vm:4
 VQRDMULH A1 1111 0011 0 d sz:2 vn:4 vd:4 1011 n q m 0 vm:4
 VPADD A1 1111 0010 0 d sz:2 vn:4 vd:4 1011 n q m 1 vm:4
+# NB: VFM is VFPv4 only. There is no Neon encoding for VFNM.
+VFM A1 1111 0010 0 d op sz vn:4 vd:4 1100 n q m 1 vm:4
 VADD_float A1 1111 0010 0 d 0 sz vn:4 vd:4 1101 n q m 0 vm:4
 VSUB_float A1 1111 0010 0 d 1 sz vn:4 vd:4 1101 n q m 0 vm:4
 VPADD_float A1 1111 0011 0 d 0 sz vn:4 vd:4 1101 n q m 0 vm:4
@@ -677,10 +684,12 @@ VCVT_d A1 cond:4 11101 d 111 op 1 u vd:4 101 sf 0 1 i 0 0 imm:3
 # sx==0, bit 3 == 1, bits 2..0 and 5 0
 VCVT_e A1 cond:4 11101 d 111 op 1 u vd:4 101 sf 0 1 0 0 1000
 
+# VFPv4 fused multiply-add
+VFM A2 cond:4 11101 d 10 vn:4 vd:4 101 sz n op m 0 vm:4
+VFNM A1 cond:4 11101 d 01 vn:4 vd:4 101 sz n op m 0 vm:4
+
 # UNDEF patterns in VFP data processing space (not currently checked):
 # opc1 1x00 opc3 x1
-# opc1 1x01
-# opc1 1x10
 # opc1 1x11 opc2 0110 opc3 x1
 # opc1 1x11 opc2 0111 opc3 01
 # opc1 1x11 opc2 1001 opc3 x1
