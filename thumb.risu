@@ -67,6 +67,12 @@ SMUSD T1 11111 0110 100 rn:4 1111 rd:4 000 m rm:4
 SMLALD T1 11111 0111 100 rn:4 rdlo:4 rdhi:4 110 m rm:4 { $rdhi != $rdlo; }
 SMLSLD T1 11111 0111 101 rn:4 rdlo:4 rdhi:4 110 m rm:4 { $rdhi != $rdlo; }
 
+# Basic Thumb-2 data ops
+# register ops
+AND T1 010000 0000 rm:3 rd:3
+AND T2 11101 01 0000 s rn:4 0 imm:3 rd:4 imm2:2 type:2 rm:4
+BIC T1 010000 1110 rm:3 rd:3
+BIC T2 11101 01 0001 s rn:4 0 imm:3 rd:4 imm2:2 type:2 rm:4
 
 ##############################################################################
 # Loads and stores
