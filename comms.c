@@ -84,7 +84,7 @@ int master_connect(uint16_t port)
    /* Just block until we get a connection */
    fprintf(stderr, "master: waiting for connection on port %d...\n", port);
    struct sockaddr_in csa;
-   size_t csasz;
+   size_t csasz = sizeof(csa);
    int nsock = accept(sock, (struct sockaddr*)&csa, &csasz);
    if (nsock < 0)
    {
