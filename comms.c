@@ -22,7 +22,7 @@
 
 #include "risu.h"
 
-int apprentice_connect(const char *hostname, uint16_t port)
+int apprentice_connect(const char *hostname, int port)
 {
    /* We are the client end of the TCP connection */
    int sock;
@@ -51,7 +51,7 @@ int apprentice_connect(const char *hostname, uint16_t port)
    return sock;
 }
 
-int master_connect(uint16_t port)
+int master_connect(int port)
 {
    int sock;
    struct sockaddr_in sa;
@@ -84,7 +84,7 @@ int master_connect(uint16_t port)
    /* Just block until we get a connection */
    fprintf(stderr, "master: waiting for connection on port %d...\n", port);
    struct sockaddr_in csa;
-   size_t csasz = sizeof(csa);
+   socklen_t csasz = sizeof(csa);
    int nsock = accept(sock, (struct sockaddr*)&csa, &csasz);
    if (nsock < 0)
    {

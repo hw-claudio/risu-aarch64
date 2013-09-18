@@ -204,10 +204,10 @@ int send_register_info(int sock, void *uc)
           */
          return send_data_pkt(sock, &ri, sizeof(ri));
       case OP_SETMEMBLOCK:
-         memblock = (uint8_t*)ri.gpreg[0];
+         memblock = NULL + ri.gpreg[0];
          break;
       case OP_GETMEMBLOCK:
-         set_r0(uc, ri.gpreg[0] + (uint32_t)memblock);
+         set_r0(uc, ri.gpreg[0] + (memblock - NULL));
          break;
       case OP_COMPAREMEM:
          return send_data_pkt(sock, memblock, MEMBLOCKLEN);
@@ -256,10 +256,10 @@ int recv_and_compare_register_info(int sock, void *uc)
          send_response_byte(sock, resp);
          break;
       case OP_SETMEMBLOCK:
-         memblock = (uint8_t*)master_ri.gpreg[0];
+         memblock = NULL + master_ri.gpreg[0];
          break;
       case OP_GETMEMBLOCK:
-         set_r0(uc, master_ri.gpreg[0] + (uint32_t)memblock);
+         set_r0(uc, master_ri.gpreg[0] + (memblock - NULL));
          break;
       case OP_COMPAREMEM:
          mem_used = 1;
@@ -293,7 +293,8 @@ static void dump_reginfo(struct reginfo *ri)
    fprintf(stderr, "  cpsr: %08x\n", ri->cpsr);
    for (i = 0; i < 32; i++)
    {
-      fprintf(stderr, "  d%d: %016llx\n", i, ri->fpregs[i]);
+      fprintf(stderr, "  d%d: %016llx\n",
+              i, (unsigned long long)ri->fpregs[i]);
    }
    fprintf(stderr, "  fpscr: %08x\n", ri->fpscr);
 }
@@ -321,7 +322,9 @@ static void report_mismatch_detail(struct reginfo *m, struct reginfo *a)
    for (i = 0; i < 32; i++)
    {
       if (m->fpregs[i] != a->fpregs[i])
-         fprintf(stderr, "  d%d: %016llx vs %016llx\n", i, m->fpregs[i], a->fpregs[i]);
+         fprintf(stderr, "  d%d: %016llx vs %016llx\n", i,
+                 (unsigned long long)m->fpregs[i],
+                 (unsigned long long)a->fpregs[i]);
    }
    if (m->fpscr != a->fpscr)
       fprintf(stderr, "  fpscr: %08x vs %08x\n", m->fpscr, a->fpscr);

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/******************************************************************************
  * Copyright (c) 2010 Linaro Limited
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,7 +7,7 @@
  *
  * Contributors:
  *     Peter Maydell (Linaro) - initial implementation
- *******************************************************************************/
+ *****************************************************************************/
 
 
 /* Random Instruction Sequences for Userspace */
@@ -27,8 +27,7 @@
 
 #include "risu.h"
 
-uint8_t *memblock = 0;
-
+void *memblock = 0;
 
 typedef void sighandler_fn_t(int sig, siginfo_t *si, void *vuc);
 
@@ -87,7 +86,7 @@ static void set_sigill_handler(sighandler_fn_t *fn)
 
 typedef void entrypoint_fn(void);
 
-uint32_t image_start_address;
+uintptr_t image_start_address;
 entrypoint_fn *image_start;
 
 void load_image(const char *imgfile)
@@ -120,7 +119,7 @@ void load_image(const char *imgfile)
    }
    close(fd);
    image_start = addr;
-   image_start_address = (uint32_t)addr;
+   image_start_address = (uintptr_t)addr;
 }
 
 int master(int sock)

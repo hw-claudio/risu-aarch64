@@ -12,18 +12,27 @@
 #ifndef RISU_H
 #define RISU_H
 
-#include <stdint.h>
+#include <inttypes.h>
+
+#include "config.h"
+
+#ifndef HAVE_SOCKLEN_T
+#define socklen_t int
+#endif /* HAVE_SOCKLEN_T */
+
+#ifndef HAVE_UINTPTR_T
+#define uintptr_t size_t
+#endif /* HAVE_UINTPTR_T */
 
 /* Socket related routines */
-int master_connect(uint16_t port);
-int apprentice_connect(const char *hostname, uint16_t port);
+int master_connect(int port);
+int apprentice_connect(const char *hostname, int port);
 int send_data_pkt(int sock, void *pkt, int pktlen);
 int recv_data_pkt(int sock, void *pkt, int pktlen);
 void send_response_byte(int sock, int resp);
 
-extern uint32_t image_start_address;
-
-extern uint8_t *memblock;
+extern uintptr_t image_start_address;
+extern void *memblock;
 
 extern int test_fp_exc;
 
