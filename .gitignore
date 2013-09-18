@@ -3,3 +3,5 @@
 *.bin
 risu
 core
+config.h
+Makefile.in
