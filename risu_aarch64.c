@@ -66,7 +66,7 @@ int send_register_info(int sock, void *uc)
         memblock = (void *)ri.regs[0];
        break;
     case OP_GETMEMBLOCK:
-        set_x0(uc, ri.regs[0] + (memblock - NULL));
+        set_x0(uc, ri.regs[0] + (uintptr_t)memblock);
         break;
     case OP_COMPAREMEM:
         return send_data_pkt(sock, memblock, MEMBLOCKLEN);
@@ -114,7 +114,7 @@ int recv_and_compare_register_info(int sock, void *uc)
           memblock = (void *)master_ri.regs[0];
           break;
       case OP_GETMEMBLOCK:
-          set_x0(uc, master_ri.regs[0] + (memblock - NULL));
+          set_x0(uc, master_ri.regs[0] + (uintptr_t)memblock);
           break;
       case OP_COMPAREMEM:
          mem_used = 1;
