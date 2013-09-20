@@ -87,7 +87,7 @@ int send_register_info(int sock, void *uc)
           */
          return send_data_pkt(sock, &ri, sizeof(ri));
       case OP_SETMEMBLOCK:
-         memblock = NULL + ri.gpreg[0];
+         memblock = (void *)ri.gpreg[0];
          break;
       case OP_GETMEMBLOCK:
          set_r0(uc, ri.gpreg[0] + (memblock - NULL));
@@ -139,7 +139,7 @@ int recv_and_compare_register_info(int sock, void *uc)
          send_response_byte(sock, resp);
          break;
       case OP_SETMEMBLOCK:
-         memblock = NULL + master_ri.gpreg[0];
+         memblock = (void *)master_ri.gpreg[0];
          break;
       case OP_GETMEMBLOCK:
          set_r0(uc, master_ri.gpreg[0] + (memblock - NULL));
