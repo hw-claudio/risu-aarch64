@@ -25,10 +25,10 @@ OBJS=$(SRCS:.c=.o)
 all: $(PROG) $(BINS)
 
 $(PROG): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) -o $@ $^
 
 %.o: %.c $(HDRS)
-	$(CC) $(CFLAGS) -o $@ -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 
 %_$(ARCH).bin: %_$(ARCH).elf
 	$(OBJCOPY) -O binary $< $@

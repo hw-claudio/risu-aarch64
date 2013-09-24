@@ -23,7 +23,7 @@ guess_arch() {
     elif check_define __aarch64__ ; then
         ARCH="aarch64"
     else
-        echo "This cpu is not supported by risu." >&2
+        echo "This cpu is not supported by risu. Try -h. " >&2
         exit 1
     fi
 }
@@ -74,7 +74,40 @@ generate_makefilein() {
     echo "...done"
 }
 
+usage() {
+    cat <<EOF
+Usage: [VAR=VALUE]... ./configure [-h|--help]
+
+To assign environment variables (e.g., CC, CFLAGS...), specify them as
+VAR=VALUE.  See below for descriptions of some of the useful variables.
+
+Some influential environment variables:
+  CROSS_PREFIX cross-compiler prefix, defaults to gcc and other tools
+               prefixed with the given string.
+
+  ARCH         force target architecture instead of trying to detect it.
+               Valid values=[arm|aarch64]
+
+  CC           C compiler command
+  CFLAGS       C compiler flags
+  CPPFLAGS     C preprocessor flags, e.g. -I<include dir>
+
+  AS           assembler command
+  OBJCOPY      object copy utility command
+
+EOF
+}
+
 # STARTUP: entry point
+
+for opt do
+  case "$opt" in
+      --help | -h)
+          usage;
+          exit 0;;
+  esac
+done
+
 CC="${CC-${CROSS_PREFIX}gcc}"
 AS="${AS-${CROSS_PREFIX}as}"
 OBJCOPY="${OBJCOPY-${CROSS_PREFIX}objcopy}"
