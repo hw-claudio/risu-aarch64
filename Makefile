@@ -25,7 +25,7 @@ OBJS=$(SRCS:.c=.o)
 all: $(PROG) $(BINS)
 
 $(PROG): $(OBJS)
-	$(CC) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 %.o: %.c $(HDRS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
