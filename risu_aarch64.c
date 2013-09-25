@@ -43,7 +43,7 @@ static int get_risuop(uint32_t insn)
      */
     uint32_t op = insn & 0xf;
     uint32_t key = insn & ~0xf;
-    uint32_t risukey = 0xe7fe5af0;
+    uint32_t risukey = 0x00005af0;
     return (key != risukey) ? -1 : op;
 }
 

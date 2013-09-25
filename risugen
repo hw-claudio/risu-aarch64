@@ -8,6 +8,7 @@
 #
 # Contributors:
 #     Peter Maydell (Linaro) - initial implementation
+#     Claudio Fontana (Linaro) - initial aarch64 support
 ###############################################################################
 
 # risugen -- generate a test binary file for use with risu
@@ -26,6 +27,12 @@ my %insn_details;
 # is_thumb tracks the mode we're actually currently in (ie should we emit
 # an arm or thumb insn?); test_thumb tells us which mode we need to switch
 # to to emit the insns under test.
+# Use .mode aarch64 to start in Aarch64 mode.
+
+my $is_aarch64 = 0; # are we in aarch64 mode?
+# For aarch64 it only makes sense to put the mode directive at the
+# beginning, and there is no switching away from aarch64 to arm/thumb.
+
 my $is_thumb = 0;   # are we currently in Thumb mode?
 my $test_thumb = 0; # should test code be Thumb mode?
 
@@ -76,6 +83,7 @@ sub insn16($)
     $bytecount += 2;
 }
 
+# for thumb only
 sub align4()
 {
     if ($bytecount & 3) {
@@ -113,11 +121,20 @@ sub write_arm_risuop($)
     insn32(0xe7fe5af0 | $op);
 }
 
+sub write_aarch64_risuop($)
+{
+    # instr with bits (28:27) == 0 0 are UNALLOCATED
+    my ($op) = @_;
+    insn32(0x00005af0 | $op);
+}
+
 sub write_risuop($)
 {
     my ($op) = @_;
     if ($is_thumb) {
         write_thumb_risuop($op);
+    } elsif ($is_aarch64) {
+        write_aarch64_risuop($op);
     } else {
         write_arm_risuop($op);
     }
@@ -140,7 +157,7 @@ sub write_switch_to_thumb()
 
 sub write_switch_to_arm()
 {
-    # Switch to ARM mode if we're not already there
+    # Switch to ARM mode if we are in thumb mode
     if ($is_thumb) {
         align4();
         insn16(0x4778);  # bx pc
@@ -152,6 +169,10 @@ sub write_switch_to_arm()
 sub write_switch_to_test_mode()
 {
     # Switch to whichever mode we need for test code
+    if ($is_aarch64) {
+        return; # nothing to do
+    }
+
     if ($test_thumb) {
         write_switch_to_thumb();
     } else {
@@ -162,7 +183,11 @@ sub write_switch_to_test_mode()
 sub write_sub_rrr($$$)
 {
     my ($rd, $rn, $rm) = @_;
-    if ($is_thumb) {
+
+    if ($is_aarch64) {
+        insn32(0xcb000000 | ($rm << 16) | ($rn << 5) | $rd);
+
+    } elsif ($is_thumb) {
         # enc T2
         insn16(0xeba0 | $rn);
         insn16(0x0000 | ($rd << 8) | $rm);
@@ -183,11 +208,17 @@ sub write_sub_rrrs($$$$$)
     # sub rd, rn, rm, shifted
     my ($rd, $rn, $rm, $type, $imm) = @_;
     $type = $SHIFT_LSL if $imm == 0;
-    if ($imm == 32 && ($type == $SHIFT_LSR || $type == $SHIFT_ASR)) {
+    my $bits = $is_aarch64 ? 64 : 32;
+
+    if ($imm == $bits && ($type == $SHIFT_LSR || $type == $SHIFT_ASR)) {
         $imm = 0;
     }
-    die "write_sub_rrrs: bad shift immediate $imm\n" if $imm < 0 || $imm > 31;
-    if ($is_thumb) {
+    die "write_sub_rrrs: bad shift immediate $imm\n" if $imm < 0 || $imm > ($bits - 1);
+
+    if ($is_aarch64) {
+        insn32(0xcb000000 | ($type << 22) | ($rm << 16) | ($imm << 10) | ($rn << 5) | $rd);
+
+    } elsif ($is_thumb) {
         # enc T2
         my ($imm3, $imm2) = ($imm >> 2, $imm & 3);
         insn16(0xeba0 | $rn);
@@ -201,7 +232,12 @@ sub write_sub_rrrs($$$$$)
 sub write_mov_rr($$)
 {
     my ($rd, $rm) = @_;
-    if ($is_thumb) {
+
+    if ($is_aarch64) {
+        # using ADD 0x11000000 */
+        insn32(0x91000000 | ($rm << 5) | $rd);
+
+    } elsif ($is_thumb) {
         # enc T3
         insn16(0xea4f);
         insn16(($rd << 8) | $rm);
@@ -216,7 +252,12 @@ sub write_mov_ri16($$$)
     # Write 16 bits of immediate to register, using either MOVW or MOVT
     my ($rd, $imm, $is_movt) = @_;
     die "write_mov_ri16: immediate $imm out of range\n" if (($imm & 0xffff0000) != 0);
-    if ($is_thumb) {
+
+    if ($is_aarch64) {
+        # Use MOVZ 0x52800000. is_movt means MOVK of high bits */
+        insn32(0xd2800000 | ($is_movt << 29) | ($is_movt ? 16 << 17 : 0) | ($imm << 5) | $rd);
+
+    } elsif ($is_thumb) {
         # enc T3
         my ($imm4, $i, $imm3, $imm8) = (($imm & 0xf000) >> 12,
                                         ($imm & 0x0800) >> 11,
@@ -234,11 +275,22 @@ sub write_mov_ri16($$$)
 
 sub write_mov_ri($$)
 {
-    # We always use a MOVW/MOVT pair, for simplicity
+    # We always use a MOVW/MOVT pair, for simplicity.
+    # on aarch64, we use a MOVZ/MOVK pair.
     my ($rd, $imm) = @_;
     write_mov_ri16($rd, ($imm & 0xffff), 0);
     my $highhalf = ($imm >> 16) & 0xffff;
     write_mov_ri16($rd, $highhalf, 1) if $highhalf;
+}
+
+sub aarch64_limm($$)
+{
+    my ($m, $r) = @_;
+    if ($m <= 0) {
+        die "aarch64_limm: invalid bit count m";
+    }
+
+    return ($r << 16) | (($m - 1) << 10);
 }
 
 sub write_random_double_fpreg()
@@ -318,7 +370,7 @@ sub write_random_fpreg()
     }
 }
 
-sub write_random_register_data()
+sub write_random_arm_regdata()
 {
     # TODO hardcoded, also no d16-d31 initialisation
     my $vfp = 2;  # 0 : no vfp, 1 : vfpd16, 2 : vfpd32
@@ -350,6 +402,32 @@ sub write_random_register_data()
     # next:
     # clear the flags (NZCVQ and GE): msr APSR_nzcvqg, #0
     insn32(0xe32cf000);
+}
+
+sub write_random_aarch64_regdata()
+{
+    # clear flags
+    insn32(0xd53b4200);                      # mrs     x0, nzcv
+    insn32(0x52000000 | aarch64_limm(4, 4)); # eori w0, w0, 0xf0000000
+    insn32(0xd51b4200);                      # msr     nzcv, x0
+
+    # TODO hardcoded, also no floating point yet
+    for (my $i = 0; $i <= 30; $i++) {
+        # TODO full 64 bit pattern instead of 32
+        write_mov_ri($i, rand(0xffffffff));
+    }
+    write_mov_rr(31, 0); # move x0 to sp
+    write_mov_ri(0, rand(0xffffffff)); # regen x0
+}
+
+sub write_random_register_data()
+{
+    if ($is_aarch64) {
+        write_random_aarch64_regdata();
+    } else {
+        write_random_arm_regdata();
+    }
+
     write_risuop($OP_COMPARE);
 }
 
@@ -711,7 +789,9 @@ sub write_test_code($$$)
     print "Generating code using patterns: @keys...\n";
     progress_start(78, $numinsns);
 
-    write_set_fpscr($fpscr);
+    if (!$is_aarch64) {
+        write_set_fpscr($fpscr);
+    }
 
     if (grep { defined($insn_details{$_}->{blocks}->{"memory"}) } @keys) {
         write_memblock_setup();
@@ -759,6 +839,9 @@ sub parse_risu_directive($$@)
         if ($rest[0] eq "thumb") {
             $test_thumb = 1;
         } elsif ($rest[0] eq "arm") {
+            $test_thumb = 0;
+        } elsif ($rest[0] eq "aarch64") {
+            $is_aarch64 = 1;
             $test_thumb = 0;
         } else {
             print STDERR "$file:$.: .mode: unknown mode $rest[0]\n";

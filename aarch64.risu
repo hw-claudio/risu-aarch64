@@ -11,6 +11,7 @@
 ###############################################################################
 
 # Input file for risugen defining AArch64 instructions
+.mode aarch64
 
 # Some random patterns
 #ADD A64 cond:4 0000 100 s rn:4 rd:4 imm:5 type:2 0 rm:4

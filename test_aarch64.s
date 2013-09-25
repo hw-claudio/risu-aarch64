@@ -45,10 +45,8 @@ mov w30, 30
 mov sp,  31
 
 /* do compare.
- * The space 0xE7F___F_ is guaranteed to always UNDEF
- * and not to be allocated for insns in future architecture
- * revisions.
+ * The manual says instr with bits (28,27) == 0 0 are UNALLOCATED
  */
-.int 0xe7fe5af0
+.int 0x00005af0
 /* exit test */
-.int 0xe7fe5af1
+.int 0x00005af1
