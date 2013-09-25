@@ -32,9 +32,7 @@ void reginfo_init(struct reginfo *ri, ucontext_t *uc)
     /* ri->pstate = uc->uc_mcontext.pstate; */
 
     ri->fault_address = uc->uc_mcontext.fault_address;
-    /* ri->faulting_insn = *((uint32_t *)uc->uc_mcontext.pc); */
-    /* XXX I think we can use fault address instead */
-    ri->faulting_insn = *((uint32_t *)ri->fault_address);
+    ri->faulting_insn = *((uint32_t *)uc->uc_mcontext.pc);
 }
 
 /* reginfo_is_eq: compare the reginfo structs, returns nonzero if equal */

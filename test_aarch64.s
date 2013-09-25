@@ -42,7 +42,6 @@ mov w27, 27
 mov w28, 28
 mov w29, 29
 mov w30, 30
-mov sp,  31
 
 /* do compare.
  * The manual says instr with bits (28,27) == 0 0 are UNALLOCATED

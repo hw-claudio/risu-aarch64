@@ -416,8 +416,8 @@ sub write_random_aarch64_regdata()
         # TODO full 64 bit pattern instead of 32
         write_mov_ri($i, rand(0xffffffff));
     }
-    write_mov_rr(31, 0); # move x0 to sp
-    write_mov_ri(0, rand(0xffffffff)); # regen x0
+#write_mov_rr(31, 0); # move x0 to sp
+#write_mov_ri(0, rand(0xffffffff)); # regen x0
 }
 
 sub write_random_register_data()

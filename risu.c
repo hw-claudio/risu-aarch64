@@ -29,10 +29,6 @@
 
 void *memblock = 0;
 
-typedef void sighandler_fn_t(int sig, siginfo_t *si, void *vuc);
-
-sighandler_fn_t master_sigill, apprentice_sigill;
-
 int apprentice_socket, master_socket;
 
 sigjmp_buf jmpbuf;
@@ -71,9 +67,11 @@ void apprentice_sigill(int sig, siginfo_t *si, void *uc)
    }
 }
 
-static void set_sigill_handler(sighandler_fn_t *fn)
+static void set_sigill_handler(void (*fn)(int, siginfo_t *, void *))
 {
    struct sigaction sa;
+   memset(&sa, 0, sizeof(struct sigaction));
+
    sa.sa_sigaction = fn;
    sa.sa_flags = SA_SIGINFO;
    sigemptyset(&sa.sa_mask);
@@ -129,7 +127,7 @@ int master(int sock)
       return report_match_status();
    }
    master_socket = sock;
-   set_sigill_handler(master_sigill);
+   set_sigill_handler(&master_sigill);
    fprintf(stderr, "starting image\n");
    image_start();
    fprintf(stderr, "image returned unexpectedly\n");
@@ -139,7 +137,7 @@ int master(int sock)
 int apprentice(int sock)
 {
    apprentice_socket = sock;
-   set_sigill_handler(apprentice_sigill);
+   set_sigill_handler(&apprentice_sigill);
    fprintf(stderr, "starting image\n");
    image_start();
    fprintf(stderr, "image returned unexpectedly\n");
