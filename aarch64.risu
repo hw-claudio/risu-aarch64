@@ -13,9 +13,231 @@
 # Input file for risugen defining AArch64 instructions
 .mode aarch64
 
-# Some random patterns
-#ADD A64 cond:4 0000 100 s rn:4 rd:4 imm:5 type:2 0 rm:4
-#RBIT A64 cond:4 0110 1111 1111 rd:4 1111 0011 rm:4
+# from ARM DDI 0487A.a ARM Architecture Reference Manual
+# NIY: PC-related instructions
+# NIY: SP-related instructions
+# NIY: flags-related instructions
+# NIY: floating point and SIMD
 
-# mul
-MUL A64 ext:1 001 1011 000 rm:5 0111 11 rn:5 rd:5
+# - - - 1 0 0 - - - - - - - - - - - - - - - - Data processing - immediate
+# C3.4.1 Add/subtract (immediate)
+# 31 30 29 | 28 27 26 25 24 |23 22| 21       10 | 9    5 | 4    0
+# sf op  S |  1  0  0  0  1 | shft|    imm12    |   Rn   |   Rd
+
+ADDi A64 sf:1 00 10001 0 shft:1 imm:12 rn:5 rd:5 \
+!constraints { $rn != 31 && $rd != 31; }
+
+SUBi A64 sf:1 10 10001 0 shft:1 imm:12 rn:5 rd:5 \
+!constraints { $rn != 31 && $rd != 31; }
+
+# C3.4.2 Bitfield
+# 31 | 30 29 | 28 27 26 25 24 23| 22 | 21      16 15      10 9    5 4    0
+# sf |  opc  |  1  0  0  1  1  0|  N |    immr       imms      Rn     Rd
+#
+SBFM A64 sf:1 00 100110 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { \
+    ($sf == $sn) && ($sf == 1 || ($immr <= 0x1f && $imms <= 0x1f)); \
+}
+
+BFM A64 sf:1 01 100110 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { \
+    ($sf == $sn) && ($sf == 1 || ($immr <= 0x1f && $imms <= 0x1f)); \
+}
+
+UBFM A64 sf:1 10 100110 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { \
+    ($sf == $sn) && ($sf == 1 || ($immr <= 0x1f && $imms <= 0x1f)); \
+}
+
+# C3.4.3 Extract
+# 31 |30 29| 28 27 26 25 24 23| 22 | 21 | 20    16 15      10 9    5 4    0
+# sf |op21 |  1  0  0  1  1  1|  N | o0 |    Rm       imms      Rn     Rd
+
+EXTR32 A64 0 00 100111 0 0 rm:5 0 imms:5 rn:5 rd:5
+
+EXTR64 A64 1 00 100111 1 0 rm:5 imms:6 rn:5 rd:5
+
+# C3.4.4 Logical (immediate)
+# 31 |30 29| 28 27 26 25 24 23| 22 | 21      16 15      10 9    5 4    0
+# sf |opc  |  1  0  0  1  0  0|  N |    immr       imms      Rn     Rd
+
+# XXX remove condition on immr
+
+ANDi A64 sf:1 00 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { \
+    ($rn != 31 && $rd != 31) && \
+    (($sf == 0 && $sn == 0 && $imms < 0x1f) || \
+     ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
+}
+
+ORRi A64 sf:1 01 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { \
+    ($rn != 31 && $rd != 31) && \
+    (($sf == 0 && $sn == 0 && $imms < 0x1f) || \
+     ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
+}
+
+EORi A64 sf:1 10 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { \
+    ($rn != 31 && $rd != 31) && \
+    (($sf == 0 && $sn == 0 && $imms < 0x1f) || \
+     ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
+}
+
+# C3.4.5 Move wide (immediate)
+# 31 |30 29| 28 27 26 25 24 23 | 22 21 | 20       5 4    0
+# sf |opc  |  1  0  0  1  0  1 |  hw   |    imm16     Rd
+
+MOVN A64 sf:1 00 100101 00 imm:16 rd:5
+
+MOVZ A64 sf:1 10 100101 00 imm:16 rd:5
+
+MOVK A64 sf:1 11 100101 00 imm:16 rd:5
+
+# C3.4.6 PC-rel. addressing NIY
+
+# - - - - 1 0 1 - - - - - - - - - - - - - - - Data processing - register
+
+# C3.5.1 Add/subtract (extended register)
+# 31 30 29 28 27 26 25 24 |23 22| 21 | 20    16 15    13 12  10 9    5 4    0
+# sf op  S  0  1  0  1  1 | opt |  1 |    Rm     option   imm3    Rn     Rd
+
+ADDx A64 sf:1 00 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
+!constraints { $rn != 31 && $rd != 31 && $imm <= 4; }
+
+SUBx A64 sf:1 10 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
+!constraints { $rn != 31 && $rd != 31 && $imm <= 4; }
+
+# C3.5.2 Add/subtract (shifted register)
+# 31 30 29 28 27 26 25 24 |23 22| 21 | 20    16 15      10 9    5 4    0
+# sf op  S  0  1  0  1  1 |shift|  0 |    Rm       imm6      Rn     Rd
+
+ADD A64 sf:1 00 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $shft < 3 && ($sf == 1 || $imm <= 0x1f); }
+
+SUB A64 sf:1 10 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $shft < 3 && ($sf == 1 || $imm <= 0x1f); }
+
+# C3.5.3 Add/subtract (with carry)
+# 31 30 29 28 27 26 25 24 23 22 21 |20    16 15         10 9    5 4    0
+# sf op  S  1  1  0  1  0  0  0  0 |   Rm       opcode2      Rn     Rd
+
+ADC A64 sf:1 00 11010000 rm:5 000000 rn:5 rd:5
+
+SBC A64 sf:1 10 11010000 rm:5 000000 rn:5 rd:5
+
+# C3.5.4 Conditional compare (immediate) - NIY
+
+# C3.5.5 Conditional compare (register) - NIY
+
+# C3.5.6 Conditional select
+# 31 30 29 28 27 26 25 24 23 22 21 |20    16 15      12 11 10 9    5 4    0
+# sf op  S  1  1  0  1  0  1  0  0 |   Rm       cond     op2    Rn     Rd
+
+CSEL A64 sf:1 00 11010100 rm:5 cond:4 00 rn:5 rd:5
+
+CSINC A64 sf:1 00 11010100 rm:5 cond:4 01 rn:5 rd:5
+
+CSINV A64 sf:1 10 11010100 rm:5 cond:4 00 rn:5 rd:5
+
+CSNEG A64 sf:1 10 11010100 rm:5 cond:4 01 rn:5 rd:5
+
+# C3.5.7 Data-processing (1 source)
+# 31 30 29 28 27 26 25 24 23 22 21 |20         16 15        10 9    5 4    0
+# sf  1  S  1  1  0  1  0  1  1  0 |   opcode2       opcode      Rn     Rd
+
+RBIT A64 sf:1 10 11010110 00000 000000 rn:5 rd:5
+
+REV16 A64 sf:1 10 11010110 00000 000001 rn:5 rd:5
+
+REV32 A64 sf:1 10 11010110 00000 000010 rn:5 rd:5
+
+CLZ A64 sf:1 10 11010110 00000 000100 rn:5 rd:5
+
+CLS A64 sf:1 10 11010110 00000 000101 rn:5 rd:5
+
+REV64 A64 1 10 11010110 00000 000011 rn:5 rd:5
+
+# C3.5.8 Data-processing (2 source)
+# 31 30 29 28 27 26 25 24 23 22 21 |20    16 15        10 9    5 4    0
+# sf  0  S  1  1  0  1  0  1  1  0 |   Rm       opcode      Rn     Rd
+
+UDIV A64 sf:1 00 11010110 rm:5 000010 rn:5 rd:5
+SDIV A64 sf:1 00 11010110 rm:5 000011 rn:5 rd:5
+LSLV A64 sf:1 00 11010110 rm:5 001000 rn:5 rd:5
+LSRV A64 sf:1 00 11010110 rm:5 001001 rn:5 rd:5
+ASRV A64 sf:1 00 11010110 rm:5 001010 rn:5 rd:5
+RORV A64 sf:1 00 11010110 rm:5 001011 rn:5 rd:5
+
+# CRC32 availability is implementation-defined, commented out for now
+#CRC32B A64 0 00 11010110 rm:5 010000 rn:5 rd:5
+#CRC32H A64 0 00 11010110 rm:5 010001 rn:5 rd:5
+#CRC32W A64 0 00 11010110 rm:5 010010 rn:5 rd:5
+#CRC32CB A64 0 00 11010110 rm:5 010100 rn:5 rd:5
+#CRC32CH A64 0 00 11010110 rm:5 010101 rn:5 rd:5
+#CRC32CW A64 0 00 11010110 rm:5 010110 rn:5 rd:5
+#CRC32X A64 1 00 11010110 rm:5 010011 rn:5 rd:5
+#CRC32CX A64 1 00 11010110 rm:5 010111 rn:5 rd:5
+
+# C3.5.9 Data-processing (3 source)
+# 31 |30 29| 28 27 26 25 24 |23    21|20    16 15 14    10 9    5 4    0
+# sf | op54|  1  1  0  1  1 |  op31  |   Rm    o0    Ra      Rn     Rd
+
+MADD A64 sf:1 00 11011 000 rm:5 0 ra:5 rn:5 rd:5 \
+!constraints { $ra != 31; }
+
+MUL A64 sf:1 00 11011 000 rm:5 0 11111 rn:5 rd:5
+
+MSUB A64 sf:1 00 11011 000 rm:5 1 ra:5 rn:5 rd:5 \
+!constraints { $ra != 31; }
+
+MNEG A64 sf:1 00 11011 000 rm:5 1 11111 rn:5 rd:5
+
+SMADDL A64 1 00 11011 001 rm:5 0 ra:5 rn:5 rd:5 \
+!constraints { $ra != 31; }
+
+SMULL A64 1 00 11011 001 rm:5 0 11111 rn:5 rd:5
+
+SMSUBL A64 1 00 11011 001 rm:5 1 ra:5 rn:5 rd:5 \
+!constraints { $ra != 31; }
+
+SMNEGL A64 1 00 11011 001 rm:5 1 11111 rn:5 rd:5
+
+SMULH A64 1 00 11011 010 rm:5 0 ra:5 rn:5 rd:5
+
+UMADDL A64 1 00 11011 101 rm:5 0 ra:5 rn:5 rd:5 \
+!constraints { $ra != 31; }
+
+UMULL A64 1 00 11011 101 rm:5 0 11111 rn:5 rd:5
+
+UMSUBL A64 1 00 11011 101 rm:5 1 ra:5 rn:5 rd:5 \
+!constraints { $ra != 31; }
+
+UMNEGL A64 1 00 11011 101 rm:5 1 11111 rn:5 rd:5
+
+UMULH A64 1 00 11011 110 rm:5 0 ra:5 rn:5 rd:5
+
+# C3.5.10 Logical (shifted register)
+# 31|30 29| 28 27 26 25 24 |23 22| 21| 20    16 15      10 9    5 4    0
+# sf| opc |  0  1  0  1  0 |shift|  N|    Rm       imm6      Rn     Rd
+
+AND A64 sf:1 00 01010 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $sf == 1 || $imm <= 0x1f; }
+
+BIC A64 sf:1 00 01010 shft:2 1 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $sf == 1 || $imm <= 0x1f; }
+
+ORR A64 sf:1 01 01010 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $sf == 1 || $imm <= 0x1f; }
+
+ORN A64 sf:1 01 01010 shft:2 1 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $rn != 31 && ($sf == 1 || $imm <= 0x1f); }
+
+MVN A64 sf:1 01 01010 shft:2 1 rm:5 imm:6 11111 rd:5 \
+!constraints { $sf == 1 || $imm <= 0x1f; }
+
+EOR A64 sf:1 10 01010 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $sf == 1 || $imm <= 0x1f; }
+
+EON A64 sf:1 10 01010 shft:2 1 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $sf == 1 || $imm <= 0x1f; }
