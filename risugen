@@ -411,13 +411,11 @@ sub write_random_aarch64_regdata()
     insn32(0x52000000 | aarch64_limm(4, 4)); # eori w0, w0, 0xf0000000
     insn32(0xd51b4200);                      # msr     nzcv, x0
 
-    # TODO hardcoded, also no floating point yet
+    # TODO: no floating point yet
     for (my $i = 0; $i <= 30; $i++) {
         # TODO full 64 bit pattern instead of 32
         write_mov_ri($i, rand(0xffffffff));
     }
-#write_mov_rr(31, 0); # move x0 to sp
-#write_mov_ri(0, rand(0xffffffff)); # regen x0
 }
 
 sub write_random_register_data()
