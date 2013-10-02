@@ -61,8 +61,6 @@ EXTR64 A64 1 00 100111 1 0 rm:5 imms:6 rn:5 rd:5
 # 31 |30 29| 28 27 26 25 24 23| 22 | 21      16 15      10 9    5 4    0
 # sf |opc  |  1  0  0  1  0  0|  N |    immr       imms      Rn     Rd
 
-# XXX remove condition on immr
-
 ANDi A64 sf:1 00 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($rn != 31 && $rd != 31) && \
