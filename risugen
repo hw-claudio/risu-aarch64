@@ -84,7 +84,7 @@ sub insn16($)
 }
 
 # for thumb only
-sub align4()
+sub thumb_align4()
 {
     if ($bytecount & 3) {
         insn16(0xbf00);  # NOP
@@ -159,7 +159,7 @@ sub write_switch_to_arm()
 {
     # Switch to ARM mode if we are in thumb mode
     if ($is_thumb) {
-        align4();
+        thumb_align4();
         insn16(0x4778);  # bx pc
         insn16(0xbf00);  # nop
         $is_thumb = 0;
@@ -435,23 +435,81 @@ sub is_pow_of_2($)
     return ($x > 0) && (($x & ($x - 1)) == 0);
 }
 
+# put PC + offset into a register.
+# this must emit an instruction of 4 bytes.
+sub write_pc_adr($$)
+{
+    my ($rd, $imm) = @_;
+
+    if ($is_aarch64) {
+        # C2.3.5 PC-relative address calculation
+        # The ADR instruction adds a signed, 21-bit value of the pc that fetched this instruction,
+        my ($immhi, $immlo) = ($imm >> 2, $imm & 0x3);
+        insn32(0x10000000 | $immlo << 29 | $immhi << 5 | $rd);
+    } else {
+        # A.2.3 ARM Core Registers:
+        # When executing an ARM instruction, PC reads as the address of the current insn plus 8.
+        $imm -= 8;
+        insn32(0xe28f0000 | $rd << 12 | $imm);
+    }
+}
+
+# clear bits in register to satisfy alignment.
+# Must use exactly 4 instruction-bytes (one instruction on arm)
+sub write_align_reg($$)
+{
+    my ($rd, $align) = @_;
+    die "bad alignment!" if ($align < 2);
+
+    if ($is_aarch64) {
+        # eor rd, rd, (align - 1)
+        # XXX should use log2, popcount, ...
+        my $imm = 0;
+        for (my $cnt = $align; $cnt > 1; $cnt >>= 1) { $imm += 1; }
+        insn32(0xd2400000 | ($imm - 1) << 10 | $rd << 5 | $rd);
+
+    } else {
+        # bic rd, rd, (align - 1)
+        insn32(0xe3c00000 | $rd << 16 | $rd << 12 | ($align - 1));
+    }
+}
+
+# jump ahead of n bytes starting from next instruction
+sub write_jump_fwd($)
+{
+    my ($len) = @_;
+
+    if ($is_aarch64) {
+        # b pc + len
+        insn32(0x14000000 | (($len / 4) + 1));
+    } else {
+        # b pc + len
+        insn32(0xea000000 | (($len / 4) - 1));
+    }
+}
+
 sub write_memblock_setup()
 {
     # Write code which sets up the memory block for loads and stores.
     # We just need to set r0 to point to a block of at least 2K length
     # of random data, aligned to the maximum desired alignment (32).
+
+    # XXX (claudio) 2K length in bytes? if so, the following is ok,
+    # and is a change from before.
     write_switch_to_arm();
 
     my $align = $MAXALIGN;
     my $datalen = 2048 + $align;
-    die "bad alignment!" if ($align > 255) || !is_pow_of_2($align);
+    die "bad alignment!" if ($align > 255) || !is_pow_of_2($align) || $align < 4;
 
     # set r0 to (datablock + (align-1)) & ~(align-1)
-    insn32(0xe28f0000 | ($align + 7)); # add r0, pc, #(8 + $align - 1)
-    insn32(0xe3c00000 | ($align - 1)); # bic r0, r0, (align-1)
-    write_arm_risuop($OP_SETMEMBLOCK);
-    insn32(0xea000000 + ($datalen - 1)); # b next
-    for (0..($datalen - 1)) {
+    # datablock is at PC + (4 * 4 instructions) = PC + 16
+    write_pc_adr(0, (4 * 4) + ($align - 1)); # insn 1
+    write_align_reg(0, $align);              # insn 2
+    write_risuop($OP_SETMEMBLOCK);           # insn 3
+    write_jump_fwd($datalen);                # insn 4
+
+    for (my $i = 0; $i < $datalen / 4; $i++) {
         insn32(rand(0xffffffff));
     }
     # next:
@@ -658,13 +716,15 @@ sub gen_one_insn($$)
             my $val = ($insn >> $pos) & $mask;
             # Check constraints here:
             # not allowed to use or modify sp or pc
-            next INSN if ($var =~ /^r/ && (($val == 13) || ($val == 15)));
-            # Some very arm-specific code to force the condition field
-            # to 'always' if requested.
-            if ($forcecond) {
-                if ($var eq "cond") {
-                    $insn &= ~ ($mask << $pos);
-                    $insn |= (0xe << $pos);
+            if (!$is_aarch64) {
+                next INSN if ($var =~ /^r/ && (($val == 13) || ($val == 15)));
+                # Some very arm-specific code to force the condition field
+                # to 'always' if requested.
+                if ($forcecond) {
+                    if ($var eq "cond") {
+                        $insn &= ~ ($mask << $pos);
+                        $insn |= (0xe << $pos);
+                    }
                 }
             }
         }
@@ -692,8 +752,13 @@ sub gen_one_insn($$)
             # which is expected to be a call to a function which emits
             # the code to set up the base register and returns the
             # number of the base register.
-            # Default alignment requirement is 4 bytes.
-            align(4);
+            # Default alignment requirement for ARM is 4 bytes,
+            # we use 16 for Aarch64, although often unnecessary and overkill.
+            if ($is_aarch64) {
+                align(16);
+            } else {
+                align(4);
+            }
             $basereg = eval_with_fields($insnname, $insn, $rec, "memory", $memblock);
         }
 
