@@ -50,10 +50,24 @@
 # 31 30 29 28 27 26 25 24 23 22 21 20    16 15 14     10 9    5 4    0
 #  size  0  0  1  0  0  0 o2  L o1    Rs    o0    Rt2      Rn     Rt
 
+# size o2 L o1 o0
+#  00   0  0 0  0  STXRB            -
+#  00   0  0 0  1  STLXRB           -
+#  00   0  1 0  0  LDXRB            -
+#  00   0  1 0  1  LDAXRB           -
+#  00   1  0 0  1  STLRB            -
+#  00   1  1 0  1  LDARB            -
+#  01   0  0 0  0  STXRH            -
+#  01   0  0 0  1  STLXRH           -
+#  01   0  1 0  0  LDXRH            -
+#  01   0  1 0  1  LDAXRH           -
+#  01   1  0 0  1  STLRH            -
+#  01   1  1 0  1  LDARH            -
 
-
-
-
+# data is in rt, base address in rn, status written to rs
+STXRB A64 00 001000 000 rs:5 0 11111 rn:5 rt:5 \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rn } \
+!memory { align(1); reg($rn); }
 
 # - - - 1 0 0 - - - - - - - - - - - - - - - - Data processing - immediate
 # C3.4.1 Add/subtract (immediate)
