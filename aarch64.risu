@@ -19,6 +19,42 @@
 # NIY: flags-related instructions
 # NIY: floating point and SIMD
 
+# - - - - 1 - 0 - - - - - - - - - - - - - - - Loads and stores
+# C3.3 Loads and stores
+# NIY: SIMD & FP instructions and variants
+
+# C3.3.5 Load register (PC-relative literal)
+# 31 30 29 28 27 26 25 24 23       5 4    0
+#  opc   0  1  1  V  0  0    imm19     Rt
+#
+# XXX claudio NIY: problematic, as we need to reach the memblock
+# as a PC-relative immediate offset, and check the
+# constraints (whether it fits in immx).
+# Might require a new network API (GET_MEMBLOCK_PCREL_nbits), which
+# could fail if out of range.
+#
+# LDR_L A64 opc:2 0110 00 imm:19 rt:5 \
+# !constraints { $opc != 0x3; } \
+# !memory { pc_adr(); }
+# PRFM_L A64 11 0 110 00 imm:19 rt:5
+
+# C3.3.7 Load/store no-allocate pair (offset)
+# 31 30 29 28 27 26 25 24 23 22 21      15 14     10 9    5 4    0
+#  opc   1  0  1  V  0  0  0  L    imm7       Rt2      Rn     Rt
+#
+# XXX claudio NIY: we cannot compare results as the hint could be
+# wrong, we do not analyze the code to the level that is required.
+#
+
+# C3.3.6 Load/store exclusive
+# 31 30 29 28 27 26 25 24 23 22 21 20    16 15 14     10 9    5 4    0
+#  size  0  0  1  0  0  0 o2  L o1    Rs    o0    Rt2      Rn     Rt
+
+
+
+
+
+
 # - - - 1 0 0 - - - - - - - - - - - - - - - - Data processing - immediate
 # C3.4.1 Add/subtract (immediate)
 # 31 30 29 | 28 27 26 25 24 |23 22| 21       10 | 9    5 | 4    0

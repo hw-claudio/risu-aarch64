@@ -494,13 +494,15 @@ sub write_memblock_setup()
     # We just need to set r0 to point to a block of at least 2K length
     # of random data, aligned to the maximum desired alignment (32).
 
-    # XXX (claudio) 2K length in bytes? if so, the following is ok,
-    # and is a change from before.
+    # XXX (claudio) the comment above says 2K. Is it length in bytes?
+    # if so, the following is ok, and is a change from before.
     write_switch_to_arm();
 
     my $align = $MAXALIGN;
     my $datalen = 2048 + $align;
-    die "bad alignment!" if ($align > 255) || !is_pow_of_2($align) || $align < 4;
+    if (($align > 255) || !is_pow_of_2($align) || $align < 4) {
+        die "bad alignment!";
+    }
 
     # set r0 to (datablock + (align-1)) & ~(align-1)
     # datablock is at PC + (4 * 4 instructions) = PC + 16
@@ -569,6 +571,7 @@ sub align($)
     $alignment_restriction = $a;
 }
 
+# XXX claudio: this seems to get the full address, not the offset.
 sub write_get_offset()
 {
     # Emit code to get a random offset within the memory block, of the
@@ -714,6 +717,7 @@ sub gen_one_insn($$)
         for my $tuple (@{ $rec->{fields} }) {
             my ($var, $pos, $mask) = @$tuple;
             my $val = ($insn >> $pos) & $mask;
+            # XXX (claudio) ARM-specific - maybe move to arm.risu?
             # Check constraints here:
             # not allowed to use or modify sp or pc
             if (!$is_aarch64) {
