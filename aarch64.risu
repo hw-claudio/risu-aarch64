@@ -193,7 +193,37 @@ LDAR64 A64 11 001000 110 11111 1 11111 rn:5 rt:5 \
 #  11   0  1 1  0  LDXP        64-bit
 #  11   0  1 1  1  LDAXP       64-bit
 
-# NIY
+STXP32 A64 10 001000 001 rs:5 0 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn; } \
+!memory { align(8); reg($rn); }
+
+STLXP32 A64 10 001000 001 rs:5 1 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn; } \
+!memory { align(8); reg($rn); }
+
+LDXP32 A64 10 001000 011 11111 0 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt; } \
+!memory { align(8); reg($rn); }
+
+LDAXP32 A64 10 001000 011 11111 1 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt; } \
+!memory { align(8); reg($rn); }
+
+STXP64 A64 11 001000 001 rs:5 0 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn; } \
+!memory { align(16); reg($rn); }
+
+STLXP64 A64 11 001000 001 rs:5 1 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn; } \
+!memory { align(16); reg($rn); }
+
+LDXP64 A64 11 001000 011 11111 0 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt; } \
+!memory { align(16); reg($rn); }
+
+LDAXP64 A64 11 001000 011 11111 1 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt; } \
+!memory { align(16); reg($rn); }
 
 # - - - 1 0 0 - - - - - - - - - - - - - - - - Data processing - immediate
 # C3.4.1 Add/subtract (immediate)
