@@ -60,11 +60,11 @@
 #  01   1  0 0  1  STLRH            -
 
 #  00   0  1 0  0  LDXRB            -
-#  01   0  1 0  0  LDXRH            -
 #  00   0  1 0  1  LDAXRB           -
-#  01   0  1 0  1  LDAXRH           -
-
 #  00   1  1 0  1  LDARB            -
+
+#  01   0  1 0  0  LDXRH            -
+#  01   0  1 0  1  LDAXRH           -
 #  01   1  1 0  1  LDARH            -
 
 # data is in rt, base address in rn, status written to rs
@@ -89,6 +89,30 @@ STLXRH A64 01 001000 000 rs:5 1 11111 rn:5 rt:5 \
 !memory { align(2); reg($rn); }
 
 STLRH A64 01 001000 100 11111 1 11111 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(2); reg($rn); }
+
+LDXRB A64 00 001000 010 11111 0 11111 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1); reg($rn); }
+
+LDAXRB A64 00 001000 010 11111 1 11111 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1); reg($rn); }
+
+LDARB A64 00 001000 110 11111 1 11111 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1); reg($rn); }
+
+LDXRH A64 01 001000 010 11111 0 11111 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(2); reg($rn); }
+
+LDAXRH A64 01 001000 010 11111 1 11111 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(2); reg($rn); }
+
+LDARH A64 01 001000 110 11111 1 11111 rn:5 rt:5 \
 !constraints { $rn != 31; } \
 !memory { align(2); reg($rn); }
 
