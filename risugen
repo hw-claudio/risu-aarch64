@@ -91,6 +91,14 @@ sub thumb_align4()
     }
 }
 
+# used for aarch64 only for now
+sub data_barrier()
+{
+    if ($is_aarch64) {
+        insn32(0xd5033f9f); # DSB SYS
+    }
+}
+
 # The space 0xE7F___F_ is guaranteed to always UNDEF
 # and not to be allocated for insns in future architecture
 # revisions. So we use it for our 'do comparison' and
@@ -764,6 +772,10 @@ sub gen_one_insn($$)
                 align(4);
             }
             $basereg = eval_with_fields($insnname, $insn, $rec, "memory", $memblock);
+
+            if ($is_aarch64) {
+                data_barrier();
+            }
         }
 
         if ($is_thumb) {
@@ -791,6 +803,11 @@ sub gen_one_insn($$)
             # to avoid making register values depend on memory layout.
             # $basereg -1 means the basereg was a target of a load
             # (and so it doesn't contain a memory address after the op)
+
+            if ($is_aarch64) {
+                data_barrier();
+            }
+
             if ($basereg != -1) {
                 write_mov_ri(0, 0);
                 write_risuop($OP_GETMEMBLOCK);
