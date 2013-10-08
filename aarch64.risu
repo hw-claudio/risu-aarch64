@@ -38,14 +38,6 @@
 # !memory { pc_adr(); }
 # PRFM_L A64 11 0 110 00 imm:19 rt:5
 
-# C3.3.7 Load/store no-allocate pair (offset)
-# 31 30 29 28 27 26 25 24 23 22 21      15 14     10 9    5 4    0
-#  opc   1  0  1  V  0  0  0  L    imm7       Rt2      Rn     Rt
-#
-# XXX claudio NIY: we cannot compare results as the hint could be
-# wrong, we do not analyze the code to the level that is required.
-#
-
 # C3.3.6 Load/store exclusive
 # 31 30 29 28 27 26 25 24 23 22 21 20    16 15 14     10 9    5 4    0
 #  size  0  0  1  0  0  0 o2  L o1    Rs    o0    Rt2      Rn     Rt
@@ -222,6 +214,33 @@ LDXP64 A64 11 001000 011 11111 0 rtt:5 rn:5 rt:5 \
 !memory { align(16); reg($rn); }
 
 LDAXP64 A64 11 001000 011 11111 1 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt; } \
+!memory { align(16); reg($rn); }
+
+# C3.3.7 Load/store no-allocate pair (offset)
+# 31 30 29 28 27 26 25 24 23 22 21      15 14     10 9    5 4    0
+#  opc   1  0  1  V  0  0  0  L    imm7       Rt2      Rn     Rt
+#
+#  opc            V           L
+#   00            0           0    STNP 32-bit
+#   00            0           1    LDNP 32-bit
+#   10            0           0    STNP 64-bit
+#   10            0           1    LDNP 64-bit
+
+# XXX imm7 is always zero for now
+STNP32 A64 00 101 0 000 0 0000000 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(8); reg($rn); }
+
+LDNP32 A64 00 101 0 000 1 0000000 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt; } \
+!memory { align(8); reg($rn); }
+
+STNP64 A64 10 101 0 000 0 0000000 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(16); reg($rn); }
+
+LDNP64 A64 10 101 0 000 1 0000000 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt; } \
 !memory { align(16); reg($rn); }
 
