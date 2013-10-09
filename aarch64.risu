@@ -76,6 +76,15 @@
 #  11   1  1 0  1  LDAR        64-bit
 
 # data is in rt, base address in rn, status written to rs
+
+# XXX note: the rn != rt, rn != rtt constraint is sometimes a limitation
+# of risu (for stores in particular), sometimes seems to be a problem
+# with foundation models as well.
+# The Tech. Ref. Manual seems to define behavior for rn == rt in some
+# cases (not with writeback, ... etc), so at some point we should
+# find out how to relax some of these constraints to really check
+# the whole range of possibilities.
+
 STXRB A64 00 001000 000 rs:5 0 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(1); reg($rn); }
