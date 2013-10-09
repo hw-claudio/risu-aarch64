@@ -77,99 +77,99 @@
 
 # data is in rt, base address in rn, status written to rs
 STXRB A64 00 001000 000 rs:5 0 11111 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(1); reg($rn); }
 
 STLXRB A64 00 001000 000 rs:5 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(1); reg($rn); }
 
 STLRB A64 00 001000 100 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(1); reg($rn); }
 
 STXRH A64 01 001000 000 rs:5 0 11111 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(2); reg($rn); }
 
 STLXRH A64 01 001000 000 rs:5 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rn } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(2); reg($rn); }
 
 STLRH A64 01 001000 100 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(2); reg($rn); }
 
 LDXRB A64 00 001000 010 11111 0 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(1); reg($rn); }
 
 LDAXRB A64 00 001000 010 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(1); reg($rn); }
 
 LDARB A64 00 001000 110 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(1); reg($rn); }
 
 LDXRH A64 01 001000 010 11111 0 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(2); reg($rn); }
 
 LDAXRH A64 01 001000 010 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(2); reg($rn); }
 
 LDARH A64 01 001000 110 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(2); reg($rn); }
 
 STXR32 A64 10 001000 000 rs:5 0 11111 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
 STLXR32 A64 10 001000 000 rs:5 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
 STLR32 A64 10 001000 100 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
 LDXR32 A64 10 001000 010 11111 0 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
 LDAXR32 A64 10 001000 010 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
 LDAR32 A64 10 001000 110 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
 STXR64 A64 11 001000 000 rs:5 0 11111 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
 STLXR64 A64 11 001000 000 rs:5 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
 STLR64 A64 11 001000 100 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
 LDXR64 A64 11 001000 010 11111 0 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
 LDAXR64 A64 11 001000 010 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
 LDAR64 A64 11 001000 110 11111 1 11111 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
 #  Now with P (pair load/stores):
@@ -186,35 +186,35 @@ LDAR64 A64 11 001000 110 11111 1 11111 rn:5 rt:5 \
 #  11   0  1 1  1  LDAXP       64-bit
 
 STXP32 A64 10 001000 001 rs:5 0 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg($rn); }
 
 STLXP32 A64 10 001000 001 rs:5 1 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg($rn); }
 
 LDXP32 A64 10 001000 011 11111 0 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31 && $rt != $rtt; } \
+!constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg($rn); }
 
 LDAXP32 A64 10 001000 011 11111 1 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31 && $rt != $rtt; } \
+!constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg($rn); }
 
 STXP64 A64 11 001000 001 rs:5 0 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg($rn); }
 
 STLXP64 A64 11 001000 001 rs:5 1 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn; } \
+!constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg($rn); }
 
 LDXP64 A64 11 001000 011 11111 0 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31 && $rt != $rtt; } \
+!constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg($rn); }
 
 LDAXP64 A64 11 001000 011 11111 1 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31 && $rt != $rtt; } \
+!constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg($rn); }
 
 # C3.3.7 Load/store no-allocate pair (offset)
@@ -229,19 +229,19 @@ LDAXP64 A64 11 001000 011 11111 1 rtt:5 rn:5 rt:5 \
 
 # XXX imm7 is always zero for now
 STNP32 A64 00 101 0 000 0 0000000 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg($rn); }
 
 LDNP32 A64 00 101 0 000 1 0000000 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31 && $rt != $rtt; } \
+!constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg($rn); }
 
 STNP64 A64 10 101 0 000 0 0000000 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31; } \
+!constraints { $rn != 31 && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg($rn); }
 
 LDNP64 A64 10 101 0 000 1 0000000 rtt:5 rn:5 rt:5 \
-!constraints { $rn != 31 && $rt != $rtt; } \
+!constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg($rn); }
 
 # - - - 1 0 0 - - - - - - - - - - - - - - - - Data processing - immediate
