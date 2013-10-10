@@ -228,7 +228,7 @@ LDAXP64 A64 11 001000 011 11111 1 rtt:5 rn:5 rt:5 \
 
 # C3.3.7 Load/store no-allocate pair (offset)
 # 31 30 29 28 27 26 25 24 23 22 21      15 14     10 9    5 4    0
-#  opc   1  0  1  V  0  0  0  L    imm7       Rt2      Rn     Rt
+#  opc   1  0  1  V  0  0  0  L    simm7      Rt2      Rn     Rt
 #
 #  opc            V           L
 #   00            0           0    STNP 32-bit
@@ -236,22 +236,21 @@ LDAXP64 A64 11 001000 011 11111 1 rtt:5 rn:5 rt:5 \
 #   10            0           0    STNP 64-bit
 #   10            0           1    LDNP 64-bit
 
-# XXX imm7 is always zero for now
-STNP32 A64 00 101 0 000 0 0000000 rtt:5 rn:5 rt:5 \
+STNP32 A64 00 101 0 000 0 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt && $rn != $rtt; } \
-!memory { align(8); reg($rn); }
+!memory { align(8); reg_plus_imm($rn, sextract($imm, 7) * 4); }
 
-LDNP32 A64 00 101 0 000 1 0000000 rtt:5 rn:5 rt:5 \
+LDNP32 A64 00 101 0 000 1 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
-!memory { align(8); reg($rn); }
+!memory { align(8); reg_plus_imm($rn, sextract($imm, 7) * 4); }
 
-STNP64 A64 10 101 0 000 0 0000000 rtt:5 rn:5 rt:5 \
+STNP64 A64 10 101 0 000 0 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt && $rn != $rtt; } \
-!memory { align(16); reg($rn); }
+!memory { align(16); reg_plus_imm($rn, sextract($imm, 7) * 8); }
 
-LDNP64 A64 10 101 0 000 1 0000000 rtt:5 rn:5 rt:5 \
+LDNP64 A64 10 101 0 000 1 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
-!memory { align(16); reg($rn); }
+!memory { align(16); reg_plus_imm($rn, sextract($imm, 7) * 8); }
 
 # - - - 1 0 0 - - - - - - - - - - - - - - - - Data processing - immediate
 # C3.4.1 Add/subtract (immediate)

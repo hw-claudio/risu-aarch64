@@ -188,6 +188,24 @@ sub write_switch_to_test_mode()
     }
 }
 
+# sign extend a 32bit reg into a 64bit reg
+sub write_sxt32($$)
+{
+    my ($rd, $rn) = @_;
+    die "write_sxt32: invalid operation for this arch.\n" if (!$is_aarch64);
+
+    insn32(0x93407c00 | $rn << 5 | $rd);
+}
+
+# sign-extract from a nbit optionally signed bitfield
+sub sextract($$)
+{
+    my ($field, $nbits) = @_;
+
+    my $sign = $field & (1 << ($nbits - 1));
+    return -$sign + ($field ^ $sign);
+}
+
 sub write_sub_rrr($$$)
 {
     my ($rd, $rn, $rm) = @_;
@@ -289,6 +307,11 @@ sub write_mov_ri($$)
     write_mov_ri16($rd, ($imm & 0xffff), 0);
     my $highhalf = ($imm >> 16) & 0xffff;
     write_mov_ri16($rd, $highhalf, 1) if $highhalf;
+
+    if ($is_aarch64 && $imm < 0) {
+        # sign extend to allow small negative imm constants
+        write_sxt32($rd, $rd);
+    }
 }
 
 sub aarch64_limm($$)
