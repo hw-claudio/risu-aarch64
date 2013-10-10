@@ -133,51 +133,51 @@ LDARH A64 01 001000 110 11111 1 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(2); reg($rn); }
 
-STXR32 A64 10 001000 000 rs:5 0 11111 rn:5 rt:5 \
+STXRW A64 10 001000 000 rs:5 0 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
-STLXR32 A64 10 001000 000 rs:5 1 11111 rn:5 rt:5 \
+STLXRW A64 10 001000 000 rs:5 1 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
-STLR32 A64 10 001000 100 11111 1 11111 rn:5 rt:5 \
+STLRW A64 10 001000 100 11111 1 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
-LDXR32 A64 10 001000 010 11111 0 11111 rn:5 rt:5 \
+LDXRW A64 10 001000 010 11111 0 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
-LDAXR32 A64 10 001000 010 11111 1 11111 rn:5 rt:5 \
+LDAXRW A64 10 001000 010 11111 1 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
-LDAR32 A64 10 001000 110 11111 1 11111 rn:5 rt:5 \
+LDARW A64 10 001000 110 11111 1 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(4); reg($rn); }
 
-STXR64 A64 11 001000 000 rs:5 0 11111 rn:5 rt:5 \
+STXR A64 11 001000 000 rs:5 0 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
-STLXR64 A64 11 001000 000 rs:5 1 11111 rn:5 rt:5 \
+STLXR A64 11 001000 000 rs:5 1 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rs != $rt && $rs != $rn && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
-STLR64 A64 11 001000 100 11111 1 11111 rn:5 rt:5 \
+STLR A64 11 001000 100 11111 1 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
-LDXR64 A64 11 001000 010 11111 0 11111 rn:5 rt:5 \
+LDXR A64 11 001000 010 11111 0 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
-LDAXR64 A64 11 001000 010 11111 1 11111 rn:5 rt:5 \
+LDAXR A64 11 001000 010 11111 1 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
-LDAR64 A64 11 001000 110 11111 1 11111 rn:5 rt:5 \
+LDAR A64 11 001000 110 11111 1 11111 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(8); reg($rn); }
 
@@ -194,35 +194,35 @@ LDAR64 A64 11 001000 110 11111 1 11111 rn:5 rt:5 \
 #  11   0  1 1  0  LDXP        64-bit
 #  11   0  1 1  1  LDAXP       64-bit
 
-STXP32 A64 10 001000 001 rs:5 0 rtt:5 rn:5 rt:5 \
+STXPW A64 10 001000 001 rs:5 0 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg($rn); }
 
-STLXP32 A64 10 001000 001 rs:5 1 rtt:5 rn:5 rt:5 \
+STLXPW A64 10 001000 001 rs:5 1 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg($rn); }
 
-LDXP32 A64 10 001000 011 11111 0 rtt:5 rn:5 rt:5 \
+LDXPW A64 10 001000 011 11111 0 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg($rn); }
 
-LDAXP32 A64 10 001000 011 11111 1 rtt:5 rn:5 rt:5 \
+LDAXPW A64 10 001000 011 11111 1 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg($rn); }
 
-STXP64 A64 11 001000 001 rs:5 0 rtt:5 rn:5 rt:5 \
+STXP A64 11 001000 001 rs:5 0 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg($rn); }
 
-STLXP64 A64 11 001000 001 rs:5 1 rtt:5 rn:5 rt:5 \
+STLXP A64 11 001000 001 rs:5 1 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rs != $rt && $rs != $rtt && $rs != $rn && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg($rn); }
 
-LDXP64 A64 11 001000 011 11111 0 rtt:5 rn:5 rt:5 \
+LDXP A64 11 001000 011 11111 0 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg($rn); }
 
-LDAXP64 A64 11 001000 011 11111 1 rtt:5 rn:5 rt:5 \
+LDAXP A64 11 001000 011 11111 1 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg($rn); }
 
@@ -236,21 +236,102 @@ LDAXP64 A64 11 001000 011 11111 1 rtt:5 rn:5 rt:5 \
 #   10            0           0    STNP 64-bit
 #   10            0           1    LDNP 64-bit
 
-STNP32 A64 00 101 0 000 0 imm:7 rtt:5 rn:5 rt:5 \
+STNPW A64 00 101 0 000 0 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg_plus_imm($rn, sextract($imm, 7) * 4); }
 
-LDNP32 A64 00 101 0 000 1 imm:7 rtt:5 rn:5 rt:5 \
+LDNPW A64 00 101 0 000 1 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(8); reg_plus_imm($rn, sextract($imm, 7) * 4); }
 
-STNP64 A64 10 101 0 000 0 imm:7 rtt:5 rn:5 rt:5 \
+STNP A64 10 101 0 000 0 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg_plus_imm($rn, sextract($imm, 7) * 8); }
 
-LDNP64 A64 10 101 0 000 1 imm:7 rtt:5 rn:5 rt:5 \
+LDNP A64 10 101 0 000 1 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg_plus_imm($rn, sextract($imm, 7) * 8); }
+
+# C3.3.8 Load/store register (immediate post-indexed)
+# 31 30 29 28 27 26 25 24 23 22 21 20      12 11 10 9    5 4    0
+#  size  1  1  1  V  0  0  opc   0    imm9     0  1   Rn     Rt
+# XXX later
+
+# C3.3.12 Load/store register (unscaled immediate)
+# 31 30 29 28 27 26 25 24 23 22 21 20      12 11 10 9    5 4    0
+#  size  1  1  1  V  0  0  opc   0    imm9     0  0   Rn     Rt
+
+#  size           V        opc
+#   00            0        00       STURB   -
+#   00            0        01       LDURB   -
+#   00            0        10       LDURSB  64-bit
+#   00            0        11       LDURSB  32-bit
+#   01            0        00       STURH   -
+#   01            0        01       LDURH   -
+#   01            0        10       LDURSH  64-bit
+#   01            0        11       LDURSH  32-bit
+#   10            0        00       STUR    32-bit
+#   10            0        01       LDUR    32-bit
+#   10            0        10       LDURSW  -
+#   11            0        00       STUR    64-bit
+#   11            0        01       LDUR    64-bit
+#   11            0        10       PRFUM   -
+
+STURB A64 00 111000 00 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDURB A64 00 111000 01 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDURSB A64 00 111000 10 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDURSBW A64 00 111000 11 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+STURH A64 01 111000 00 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDURH A64 01 111000 01 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDURSH A64 01 111000 10 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDURSHW A64 01 111000 11 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+STURW A64 10 111000 00 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDURW A64 10 111000 01 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDURSW A64 10 111000 10 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+STUR A64 11 111000 00 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDUR A64 11 111000 01 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+PRFUM A64 11 111000 10 0 imm:9 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
 
 # - - - 1 0 0 - - - - - - - - - - - - - - - - Data processing - immediate
 # C3.4.1 Add/subtract (immediate)
@@ -286,9 +367,9 @@ UBFM A64 sf:1 10 100110 sn:1 immr:6 imms:6 rn:5 rd:5 \
 # 31 |30 29| 28 27 26 25 24 23| 22 | 21 | 20    16 15      10 9    5 4    0
 # sf |op21 |  1  0  0  1  1  1|  N | o0 |    Rm       imms      Rn     Rd
 
-EXTR32 A64 0 00 100111 0 0 rm:5 0 imms:5 rn:5 rd:5
+EXTRW A64 0 00 100111 0 0 rm:5 0 imms:5 rn:5 rd:5
 
-EXTR64 A64 1 00 100111 1 0 rm:5 imms:6 rn:5 rd:5
+EXTR A64 1 00 100111 1 0 rm:5 imms:6 rn:5 rd:5
 
 # C3.4.4 Logical (immediate)
 # 31 |30 29| 28 27 26 25 24 23| 22 | 21      16 15      10 9    5 4    0
@@ -387,7 +468,7 @@ CLZ A64 sf:1 10 11010110 00000 000100 rn:5 rd:5
 
 CLS A64 sf:1 10 11010110 00000 000101 rn:5 rd:5
 
-REV64 A64 1 10 11010110 00000 000011 rn:5 rd:5
+REV A64 1 10 11010110 00000 000011 rn:5 rd:5
 
 # C3.5.8 Data-processing (2 source)
 # 31 30 29 28 27 26 25 24 23 22 21 |20    16 15        10 9    5 4    0
