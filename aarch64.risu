@@ -257,6 +257,77 @@ LDNP A64 10 101 0 000 1 imm:7 rtt:5 rn:5 rt:5 \
 #  size  1  1  1  V  0  0  opc   0    imm9     0  1   Rn     Rt
 # XXX later
 
+# C3.3.11 Load/store register (unprivileged)
+# 31 30 29 28 27 26 25 24 23 22 21 20      12 11 10 9    5 4        0
+#  size  1  1  1  V  0  0  opc   0    imm9     1  0   Rn     Rt
+#
+#  size           V        opc
+#   00            0         00      STTRB   -
+#   00            0         01      LDTRB   -
+#   00            0         10      LDTRSB  64-bit
+#   00            0         11      LDTRSB  32-bit
+#   01            0         00      STTRH   -
+#   01            0         01      LDTRH   -
+#   01            0         10      LDTRSH  64-bit
+#   01            0         11      LDTRSH  32-bit
+#   10            0         00      STTR    32-bit
+#   10            0         01      LDTR    32-bit
+#   10            0         10      LDTRSW  -
+#   11            0         00      STTR    64-bit
+#   11            0         01      LDTR    64-bit
+
+STTRB A64 00 111000 00 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDTRB A64 00 111000 01 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDTRSB A64 00 111000 10 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDTRSBW A64 00 111000 11 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+STTRH A64 01 111000 00 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDTRH A64 01 111000 01 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDTRSH A64 01 111000 10 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDTRSHW A64 01 111000 11 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+STTRW A64 10 111000 00 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDTRW A64 10 111000 01 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDTRSW A64 10 111000 10 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+STTR A64 11 111000 00 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
+LDTR A64 11 111000 01 0 imm:9 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+
 # C3.3.12 Load/store register (unscaled immediate)
 # 31 30 29 28 27 26 25 24 23 22 21 20      12 11 10 9    5 4    0
 #  size  1  1  1  V  0  0  opc   0    imm9     0  0   Rn     Rt
