@@ -14,10 +14,10 @@
 .mode aarch64
 
 # from ARM DDI 0487A.a ARM Architecture Reference Manual
-# NIY: PC-related instructions
-# NIY: SP-related instructions
-# NIY: flags-related instructions
-# NIY: floating point and SIMD
+# XXX NIY: PC-related instructions
+# XXX NIY: SP-related instructions
+# XXX NIY: flags-related instructions
+# XXX NIY: floating point and SIMD
 
 # - - - - 1 - 0 - - - - - - - - - - - - - - - Loads and stores
 # C3.3 Loads and stores
@@ -337,7 +337,7 @@ PRFMr A64 11 111000 10 1 rm:5 011 shft:1 10 rn:5 rt:5 \
 
 # C3.3.11 Load/store register (unprivileged)
 # 31 30 29 28 27 26 25 24 23 22 21 20      12 11 10 9    5 4        0
-#  size  1  1  1  V  0  0  opc   0    imm9     1  0   Rn     Rt
+#  size  1  1  1  V  0  0  opc   0    imm9     1  0   Rn       Rt
 #
 #  size           V        opc
 #   00            0         00      STTRB   -
