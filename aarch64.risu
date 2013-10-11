@@ -77,10 +77,11 @@
 
 # data is in rt, base address in rn, status written to rs
 
-# XXX note: the rn != rt, rn != rtt constraint is sometimes a limitation
-# of risu (for stores in particular), sometimes seems to be a problem
-# with foundation models as well.
-# The Tech. Ref. Manual seems to define behavior for rn == rt in some
+# XXX note: the rn != rt, rn != rtt constraint is a limitation
+# of risu. If rn = rt, the SUB used to normalize the base to a non
+# process-dependent value is going to have the opposite effect to
+# change the load result to a process-dependent value.
+# The Tech. Ref. Manual defines behavior for rn == rt in some
 # cases (not with writeback, ... etc), so at some point we should
 # find out how to relax some of these constraints to really check
 # the whole range of possibilities.
