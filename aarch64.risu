@@ -256,7 +256,12 @@ LDNP A64 10 101 0 000 1 imm:7 rtt:5 rn:5 rt:5 \
 # C3.3.8 Load/store register (immediate post-indexed)
 # 31 30 29 28 27 26 25 24 23 22 21 20      12 11 10 9    5 4    0
 #  size  1  1  1  V  0  0  opc   0    imm9     0  1   Rn     Rt
-# XXX later
+# merged with 3.3.12
+
+# C3.3.9 Load/store register (immediate pre-indexed)
+# 31 30 29 28 27 26 25 24 23 22 21 20      12 11 10 9    5 4    0
+#  size  1  1  1  V  0  0  opc   0    imm9     1  1   Rn     Rt
+# merged with 3.3.12
 
 # C3.3.10 Load/store register (register offset)
 # 31 30 29 28 27 26 25 24 23 22 21 20      16 15     13 12 11 10 9    5 4        0
@@ -409,7 +414,12 @@ LDTR A64 11 111000 01 0 imm:9 10 rn:5 rt:5 \
 # C3.3.12 Load/store register (unscaled immediate)
 # 31 30 29 28 27 26 25 24 23 22 21 20      12 11 10 9    5 4    0
 #  size  1  1  1  V  0  0  opc   0    imm9     0  0   Rn     Rt
-
+# NB: also includes C3.3.8 (immediate post-indexed)
+# NB: also includes C3.3.9 (immediate pre-indexed)
+# NB: 3.3.8 and 3.3.9 are merged using the idx field.
+# NB: the address being accessed is the same with the exception
+# NB: of post-indexed, where the address is not offset.
+# NB: note that PRFUM has no pre/post version.
 #  size           V        opc
 #   00            0        00       STURB   -
 #   00            0        01       LDURB   -
@@ -426,57 +436,57 @@ LDTR A64 11 111000 01 0 imm:9 10 rn:5 rt:5 \
 #   11            0        01       LDUR    64-bit
 #   11            0        10       PRFUM   -
 
-STURB A64 00 111000 00 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+STURB A64 00 111000 00 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-LDURB A64 00 111000 01 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+LDURB A64 00 111000 01 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-LDURSB A64 00 111000 10 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+LDURSB A64 00 111000 10 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-LDURSBW A64 00 111000 11 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+LDURSBW A64 00 111000 11 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-STURH A64 01 111000 00 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+STURH A64 01 111000 00 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-LDURH A64 01 111000 01 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+LDURH A64 01 111000 01 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-LDURSH A64 01 111000 10 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+LDURSH A64 01 111000 10 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-LDURSHW A64 01 111000 11 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+LDURSHW A64 01 111000 11 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-STURW A64 10 111000 00 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+STURW A64 10 111000 00 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-LDURW A64 10 111000 01 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+LDURW A64 10 111000 01 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-LDURSW A64 10 111000 10 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+LDURSW A64 10 111000 10 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-STUR A64 11 111000 00 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+STUR A64 11 111000 00 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
-LDUR A64 11 111000 01 0 imm:9 00 rn:5 rt:5 \
-!constraints { $rn != 31 && $rn != $rt; } \
-!memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
+LDUR A64 11 111000 01 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
 PRFUM A64 11 111000 10 0 imm:9 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \

@@ -635,6 +635,10 @@ sub reg_plus_imm($$@)
 {
     # Handle reg + immediate addressing mode
     my ($base, $imm, @trashed) = @_;
+    if ($imm == 0) {
+        return reg($base, @trashed);
+    }
+
     write_get_offset();
     # Now r0 is the address we want to do the access to,
     # so set the basereg by doing the inverse of the
