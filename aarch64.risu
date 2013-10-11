@@ -258,6 +258,83 @@ LDNP A64 10 101 0 000 1 imm:7 rtt:5 rn:5 rt:5 \
 #  size  1  1  1  V  0  0  opc   0    imm9     0  1   Rn     Rt
 # XXX later
 
+# C3.3.10 Load/store register (register offset)
+# 31 30 29 28 27 26 25 24 23 22 21 20      16 15     13 12 11 10 9    5 4        0
+#  size  1  1  1  V  0  0  opc   1     Rm      option    S  1  0   Rn       Rt
+#
+#   00            0         00     STRB (register)  -
+#   00            0         01     LDRB (register)  -
+#   00            0         10     LDRSB (register) 64-bit
+#   00            0         11     LDRSB (register) 32-bit
+#   01            0         00     STRH (register)  -
+#   01            0         01     LDRH (register)  -
+#   01            0         10     LDRSH (register) 64-bit
+#   01            0         11     LDRSH (register) 32-bit
+#   10            0         00     STR (register)   32-bit
+#   10            0         01     LDR (register)   32-bit
+#   10            0         10     LDRSW (register) -
+#   11            0         00     STR (register)   64-bit
+#   11            0         01     LDR (register)   64-bit
+#   11            0         10     PRFM (register)  -
+
+# XXX opt=011 for now (LSL), other options NIY.
+# XXX the constraint rn != rm is our limitation, not imposed by arch.
+STRBr A64 00 111000 00 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 0 : 0); }
+
+LDRBr A64 00 111000 01 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 0 : 0); }
+
+LDRSBr A64 00 111000 10 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 0 : 0); }
+
+LDRSBWr A64 00 111000 11 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 0 : 0); }
+
+STRHr A64 01 111000 00 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 1 : 0); }
+
+LDRHr A64 01 111000 01 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 1 : 0); }
+
+LDRSHr A64 01 111000 10 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 1 : 0); }
+
+LDRSHWr A64 01 111000 11 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 1 : 0); }
+
+STRWr A64 10 111000 00 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 2 : 0); }
+
+LDRWr A64 10 111000 01 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 2 : 0); }
+
+LDRSWr A64 10 111000 10 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 2 : 0); }
+
+STRr A64 11 111000 00 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 3 : 0); }
+
+LDRr A64 11 111000 01 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 3 : 0); }
+
+PRFMr A64 11 111000 10 1 rm:5 011 shft:1 10 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rm != $rt && $rn != $rm; } \
+!memory { align(1); reg_plus_reg_shifted($rn, $rm, $shft ? 3 : 0); }
+
 # C3.3.11 Load/store register (unprivileged)
 # 31 30 29 28 27 26 25 24 23 22 21 20      12 11 10 9    5 4        0
 #  size  1  1  1  V  0  0  opc   0    imm9     1  0   Rn     Rt
