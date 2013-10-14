@@ -492,6 +492,80 @@ PRFUM A64 11 111000 10 0 imm:9 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(1); reg_plus_imm($rn, sextract($imm, 9)); }
 
+# C3.3.13 Load/store register (unsigned immediate)
+# 31 30 29 28 27 26 25 24 23 22 21         10 9    5 4    0
+#  size  1  1  1  V  0  1  opc       imm12      Rn     Rt
+#   00            0         00  STRB (immediate)
+#   00            0         01  LDRB (immediate)
+#   00            0         10  LDRSB (immediate)        64-bit
+#   00            0         11  LDRSB (immediate)        32-bit
+#   01            0         00  STRH (immediate)         Unsigned offset
+#   01            0         01  LDRH (immediate)         Unsigned offset
+#   01            0         10  LDRSH (immediate)        64-bit
+#   01            0         11  LDRSH (immediate)        32-bit
+#   10            0         00  STR (immediate)          32-bit
+#   10            0         01  LDR (immediate)          32-bit
+#   10            0         10  LDRSW (immediate)        Unsigned offset
+#   11            0         00  STR (immediate)          64-bit
+#   11            0         01  LDR (immediate)          64-bit
+#   11            0         10  PRFM (immediate)         -
+
+STRBi A64 00 111001 00 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, $imm); }
+
+LDRBi A64 00 111001 01 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, $imm); }
+
+LDRSBi A64 00 111001 10 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, $imm); }
+
+LDRSBWi A64 00 111001 11 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(1); reg_plus_imm($rn, $imm); }
+
+STRHi A64 01 111001 00 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(2); reg_plus_imm($rn, $imm * 2); }
+
+LDRHi A64 01 111001 01 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(2); reg_plus_imm($rn, $imm * 2); }
+
+LDRSHi A64 01 111001 10 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(2); reg_plus_imm($rn, $imm * 2); }
+
+LDRSHWi A64 01 111001 11 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(2); reg_plus_imm($rn, $imm * 2); }
+
+STRWi A64 10 111001 00 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(4); reg_plus_imm($rn, $imm * 4); }
+
+LDRWi A64 10 111001 01 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(4); reg_plus_imm($rn, $imm * 4); }
+
+LDRSWi A64 10 111001 10 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(4); reg_plus_imm($rn, $imm * 4); }
+
+STRi A64 11 111001 00 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(8); reg_plus_imm($rn, $imm * 8); }
+
+LDRi A64 11 111001 01 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(8); reg_plus_imm($rn, $imm * 8); }
+
+PRFMi A64 11 111001 10 imm:12 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt; } \
+!memory { align(8); reg_plus_imm($rn, $imm * 8); }
+
 # - - - 1 0 0 - - - - - - - - - - - - - - - - Data processing - immediate
 # C3.4.1 Add/subtract (immediate)
 # 31 30 29 | 28 27 26 25 24 |23 22| 21       10 | 9    5 | 4    0
