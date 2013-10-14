@@ -566,6 +566,41 @@ PRFMi A64 11 111001 10 imm:12 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(8); reg_plus_imm($rn, $imm * 8); }
 
+# C3.3.14 Load/store register pair (offset)
+# 31 30 29 28 27 26 25 24 23 22 21      15 14     10 9    5 4    0
+#  opc   1  0  1  V  0  1  0  L    imm7       Rt2      Rn     Rt
+#   00            0           0    STP   32-bit
+#   00            0           1    LDP   32-bit
+#   01            0           1    LDPSW Signed offset
+#   10            0           0    STP   64-bit
+#   10            0           1    LDP   64-bit
+# NB: also includes C3.3.15 (post-indexed)
+# NB: also includes C3.3.16 (pre-indexed)
+# NB: 3.3.15 and 3.3.16 are merged using the idx field.
+# NB: the address being accessed is the same with the exception
+# NB: of post-indexed, where the address is not offset.
+# NB: note that idx=0 is not included (used for non-temporal pair)
+
+STPW A64 00 101 0 0 idx:2 0 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rn != $rtt && $idx != 0; } \
+!memory { align(8); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 4); }
+
+LDPW A64 00 101 0 0 idx:2 1 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt && $idx != 0; } \
+!memory { align(8); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 4); }
+
+LDPSW A64 01 101 0 0 idx:2 1 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt && $idx != 0; } \
+!memory { align(8); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 4); }
+
+STP A64 10 101 0 0 idx:2 0 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rt && $rn != $rtt && $idx != 0; } \
+!memory { align(16); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 8); }
+
+LDP A64 10 101 0 0 idx:2 1 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt && $idx != 0; } \
+!memory { align(16); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 8); }
+
 # - - - 1 0 0 - - - - - - - - - - - - - - - - Data processing - immediate
 # C3.4.1 Add/subtract (immediate)
 # 31 30 29 | 28 27 26 25 24 |23 22| 21       10 | 9    5 | 4    0
