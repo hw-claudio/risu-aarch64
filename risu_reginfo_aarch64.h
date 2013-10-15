@@ -16,11 +16,11 @@
 struct reginfo
 {
     uint64_t fault_address;
-    uint32_t faulting_insn;
     uint64_t regs[31];
     uint64_t sp;
     uint64_t pc;
-    /* uint64_t pstate; XXX don't think we need XXX */
+    uint32_t flags;
+    uint32_t faulting_insn;
 };
 
 /* initialize structure from a ucontext */

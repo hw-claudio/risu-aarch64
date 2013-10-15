@@ -29,7 +29,7 @@ void reginfo_init(struct reginfo *ri, ucontext_t *uc)
 
     ri->sp = 0xdeadbeefdeadbeef;
     ri->pc = uc->uc_mcontext.pc - image_start_address;
-    /* ri->pstate = uc->uc_mcontext.pstate; */
+    ri->flags = uc->uc_mcontext.pstate & 0xf0000000; /* get only flags */
 
     ri->fault_address = uc->uc_mcontext.fault_address;
     ri->faulting_insn = *((uint32_t *)uc->uc_mcontext.pc);
@@ -52,7 +52,7 @@ int reginfo_dump(struct reginfo *ri, FILE *f)
 
     fprintf(f, "  sp    : %016" PRIx64 "\n", ri->sp);
     fprintf(f, "  pc    : %016" PRIx64 "\n", ri->pc);
-    /* fprintf(f, "  pstate: %016" PRIx64 "\n", ri->pstate); */
+    fprintf(f, "  flags : %08x\n", ri->flags);
 
     return !ferror(f);
 }
@@ -80,11 +80,8 @@ int reginfo_dump_mismatch(struct reginfo *m, struct reginfo *a, FILE *f)
         fprintf(f, "  pc    : %016" PRIx64 " vs %016" PRIx64 "\n",
                 m->pc, a->pc);
 
-    /*
-    if (m->pstate != a->pstate)
-        fprintf(f, "  pstate: %016" PRIx64 " vs %016" PRIx64 "\n",
-                m->pstate, a->pstate);
-    */
+    if (m->flags != a->flags)
+        fprintf(f, "  flags : %08x vs %08x\n", m->flags, a->flags);
 
     return !ferror(f);
 }
