@@ -14,9 +14,9 @@
 .mode aarch64
 
 # from ARM DDI 0487A.a ARM Architecture Reference Manual
+# XXX NIY: branch, exception generation, system insns
 # XXX NIY: PC-related instructions
 # XXX NIY: SP-related instructions
-# XXX NIY: flags-related instructions
 # XXX NIY: floating point and SIMD
 
 # - - - - 1 - 0 - - - - - - - - - - - - - - - Loads and stores
