@@ -30,8 +30,6 @@
 # XXX claudio NIY: problematic, as we need to reach the memblock
 # as a PC-relative immediate offset, and check the
 # constraints (whether it fits in immx).
-# Might require a new network API (GET_MEMBLOCK_PCREL_nbits), which
-# could fail if out of range.
 #
 # LDR_L A64 opc:2 0110 00 imm:19 rt:5 \
 # !constraints { $opc != 0x3; } \
