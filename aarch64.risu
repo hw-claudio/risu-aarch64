@@ -607,7 +607,13 @@ LDP A64 10 101 0 0 idx:2 1 imm:7 rtt:5 rn:5 rt:5 \
 ADDi A64 sf:1 00 10001 0 shft:1 imm:12 rn:5 rd:5 \
 !constraints { $rn != 31 && $rd != 31; }
 
+ADDSi A64 sf:1 01 10001 0 shft:1 imm:12 rn:5 rd:5 \
+!constraints { $rn != 31 && $rd != 31; }
+
 SUBi A64 sf:1 10 10001 0 shft:1 imm:12 rn:5 rd:5 \
+!constraints { $rn != 31 && $rd != 31; }
+
+SUBSi A64 sf:1 11 10001 0 shft:1 imm:12 rn:5 rd:5 \
 !constraints { $rn != 31 && $rd != 31; }
 
 # C3.4.2 Bitfield
@@ -662,6 +668,13 @@ EORi A64 sf:1 10 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
      ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
 }
 
+ANDSi A64 sf:1 11 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { \
+    ($rn != 31 && $rd != 31) && \
+    (($sf == 0 && $sn == 0 && $imms < 0x1f) || \
+     ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
+}
+
 # C3.4.5 Move wide (immediate)
 # 31 |30 29| 28 27 26 25 24 23 | 22 21 | 20       5 4    0
 # sf |opc  |  1  0  0  1  0  1 |  hw   |    imm16     Rd
@@ -683,7 +696,13 @@ MOVK A64 sf:1 11 100101 00 imm:16 rd:5
 ADDx A64 sf:1 00 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
 !constraints { $rn != 31 && $rd != 31 && $imm <= 4; }
 
+ADDSx A64 sf:1 01 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
+!constraints { $rn != 31 && $rd != 31 && $imm <= 4; }
+
 SUBx A64 sf:1 10 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
+!constraints { $rn != 31 && $rd != 31 && $imm <= 4; }
+
+SUBSx A64 sf:1 11 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
 !constraints { $rn != 31 && $rd != 31 && $imm <= 4; }
 
 # C3.5.2 Add/subtract (shifted register)
@@ -693,7 +712,13 @@ SUBx A64 sf:1 10 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
 ADD A64 sf:1 00 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $shft < 3 && ($sf == 1 || $imm <= 0x1f); }
 
+ADDS A64 sf:1 01 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $shft < 3 && ($sf == 1 || $imm <= 0x1f); }
+
 SUB A64 sf:1 10 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $shft < 3 && ($sf == 1 || $imm <= 0x1f); }
+
+SUBS A64 sf:1 11 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $shft < 3 && ($sf == 1 || $imm <= 0x1f); }
 
 # C3.5.3 Add/subtract (with carry)
@@ -701,23 +726,42 @@ SUB A64 sf:1 10 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 # sf op  S  1  1  0  1  0  0  0  0 |   Rm       opcode2      Rn     Rd
 
 ADC A64 sf:1 00 11010000 rm:5 000000 rn:5 rd:5
+ADCS A64 sf:1 01 11010000 rm:5 000000 rn:5 rd:5
 
 SBC A64 sf:1 10 11010000 rm:5 000000 rn:5 rd:5
+SBCS A64 sf:1 11 11010000 rm:5 000000 rn:5 rd:5
 
-# C3.5.4 Conditional compare (immediate) - NIY
+# C3.5.4 Conditional compare (immediate)
 
-# C3.5.5 Conditional compare (register) - NIY
+# 31 30 29 28 27 26 25 24 23 22 21 20      16 15      12 11 10 9    5 4 3      0
+# sf op  1  1  1  0  1  0  0  1  0    imm5       cond     1  0   Rn   0   nzcv
+#
+#  0  0     CCMN (immediate) 32-bit
+#  0  1     CCMP (immediate) 32-bit
+#  1  0     CCMN (immediate) 64-bit
+#  1  1     CCMP (immediate) 64-bit
+
+CCMNi A64 sf:1 0 111010010 imm:5 cond:4 10 rn:5 0 nzcv:4
+CCMPi A64 sf:1 1 111010010 imm:5 cond:4 10 rn:5 0 nzcv:4
+
+# C3.5.5 Conditional compare (register)
+# 31 30 29 28 27 26 25 24 23 22 21 20       16 15      12 11 10 9    5 4 3        0
+# sf op  1  1  1  0  1  0  0  1  0      Rm        cond     0  0   Rn   0    nzcv
+#  0  0     CCMN (register) 32-bit
+#  0  1     CCMP (register) 32-bit
+#  1  0     CCMN (register) 64-bit
+#  1  1     CCMP (register) 64-bit
+
+CCMN A64 sf:1 0 111010010 rm:5 cond:4 00 rn:5 0 nzcv:4
+CCMP A64 sf:1 1 111010010 rm:5 cond:4 00 rn:5 0 nzcv:4
 
 # C3.5.6 Conditional select
 # 31 30 29 28 27 26 25 24 23 22 21 |20    16 15      12 11 10 9    5 4    0
 # sf op  S  1  1  0  1  0  1  0  0 |   Rm       cond     op2    Rn     Rd
 
 CSEL A64 sf:1 00 11010100 rm:5 cond:4 00 rn:5 rd:5
-
 CSINC A64 sf:1 00 11010100 rm:5 cond:4 01 rn:5 rd:5
-
 CSINV A64 sf:1 10 11010100 rm:5 cond:4 00 rn:5 rd:5
-
 CSNEG A64 sf:1 10 11010100 rm:5 cond:4 01 rn:5 rd:5
 
 # C3.5.7 Data-processing (1 source)
@@ -725,15 +769,10 @@ CSNEG A64 sf:1 10 11010100 rm:5 cond:4 01 rn:5 rd:5
 # sf  1  S  1  1  0  1  0  1  1  0 |   opcode2       opcode      Rn     Rd
 
 RBIT A64 sf:1 10 11010110 00000 000000 rn:5 rd:5
-
 REV16 A64 sf:1 10 11010110 00000 000001 rn:5 rd:5
-
 REV32 A64 sf:1 10 11010110 00000 000010 rn:5 rd:5
-
 CLZ A64 sf:1 10 11010110 00000 000100 rn:5 rd:5
-
 CLS A64 sf:1 10 11010110 00000 000101 rn:5 rd:5
-
 REV A64 1 10 11010110 00000 000011 rn:5 rd:5
 
 # C3.5.8 Data-processing (2 source)
@@ -818,4 +857,10 @@ EOR A64 sf:1 10 01010 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
 
 EON A64 sf:1 10 01010 shft:2 1 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $sf == 1 || $imm <= 0x1f; }
+
+ANDS A64 sf:1 11 01010 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
+!constraints { $sf == 1 || $imm <= 0x1f; }
+
+BICS A64 sf:1 11 01010 shft:2 1 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
