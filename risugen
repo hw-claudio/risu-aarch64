@@ -522,15 +522,12 @@ sub write_jump_fwd($)
 sub write_memblock_setup()
 {
     # Write code which sets up the memory block for loads and stores.
-    # We just need to set r0 to point to a block of at least 2K length
-    # of random data, aligned to the maximum desired alignment (32).
-
-    # XXX (claudio) the comment above says 2K. Is it length in bytes?
-    # if so, the following is ok, and is a change from before.
+    # We set r0 to point to a block of 8K length
+    # of random data, aligned to the maximum desired alignment.
     write_switch_to_arm();
 
     my $align = $MAXALIGN;
-    my $datalen = 2048 + $align;
+    my $datalen = 8192 + $align;
     if (($align > 255) || !is_pow_of_2($align) || $align < 4) {
         die "bad alignment!";
     }
