@@ -21,6 +21,11 @@ struct reginfo
     uint64_t pc;
     uint32_t flags;
     uint32_t faulting_insn;
+
+    /* FP/SIMD */
+    uint32_t fpsr;
+    uint32_t fpcr;
+    __uint128_t vregs[32];
 };
 
 /* initialize structure from a ucontext */
