@@ -77,7 +77,7 @@ int reginfo_dump(struct reginfo *ri, FILE *f)
     fprintf(f, "  fpcr  : %08x\n", ri->fpcr);
 
     for (i = 0; i < 32; i++)
-        fprintf(f, "  Q%2d   : %016" PRIx64 "%016" PRIx64 "\n", i,
+        fprintf(f, "  V%2d   : %016" PRIx64 "%016" PRIx64 "\n", i,
                 (uint64_t)(ri->vregs[i] >> 64),
                 (uint64_t)(ri->vregs[i] & 0xffffffffffffffff));
 
@@ -118,7 +118,7 @@ int reginfo_dump_mismatch(struct reginfo *m, struct reginfo *a, FILE *f)
 
     for (i = 0; i < 32; i++) {
         if (m->vregs[i] != a->vregs[i])
-            fprintf(f, "  Q%2d   : "
+            fprintf(f, "  V%2d   : "
                     "%016" PRIx64 "%016" PRIx64 " vs "
                     "%016" PRIx64 "%016" PRIx64 "\n", i,
                     (uint64_t)(m->vregs[i] >> 64),
