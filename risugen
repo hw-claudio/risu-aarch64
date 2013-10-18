@@ -442,7 +442,27 @@ sub write_random_aarch64_regdata()
     insn32(0x52000000 | aarch64_limm(4, 4)); # eori w0, w0, 0xf0000000
     insn32(0xd51b4200);                      # msr     nzcv, x0
 
-    # TODO: no floating point yet
+    # load floating point / SIMD registers
+    my $align = 16;
+    my $datalen = 32 * 16 + $align;
+    write_pc_adr(0, (3 * 4) + ($align - 1)); # insn 1
+    write_align_reg(0, $align);              # insn 2
+    write_jump_fwd($datalen);                # insn 3
+
+    # align safety
+    for (my $i = 0; $i < ($align / 4); $i++) {
+        insn32(rand(0xffffffff));
+    };
+
+    for (my $rt = 0; $rt <= 31; $rt++) {
+        for (0..3) { insn32(rand(0xffffffff)); } # random data
+    }
+
+    for (my $rt = 0; $rt <= 31; $rt += 4) {
+        insn32(0x4cdf2c00 | $rt); # ld1 {v0.2d-v3.2d}, [x0], #64
+    }
+
+    # general purpose registers
     for (my $i = 0; $i <= 30; $i++) {
         # TODO full 64 bit pattern instead of 32
         write_mov_ri($i, rand(0xffffffff));
@@ -546,7 +566,7 @@ sub write_memblock_setup()
 
 }
 
-sub write_set_fpscr($)
+sub write_set_fpscr_arm($)
 {
     my ($fpscr) = @_;
     write_switch_to_arm();
@@ -556,6 +576,27 @@ sub write_set_fpscr($)
     insn32(0xe3400000 | (($fpscr & 0xf0000000) >> 12) | (($fpscr & 0x0fff0000) >> 16));
     # vmsr fpscr, r0
     insn32(0xeee10a10);
+}
+
+sub write_set_fpscr_aarch64($)
+{
+    # on aarch64 we have split fpcr and fpsr registers.
+    # Status will be initialized to 0, while user param controls fpcr.
+    my ($fpcr) = @_;
+    write_mov_ri(0, 0);
+    insn32(0xd51b4420); #  msr fpsr, x0
+    write_mov_ri(0, $fpcr);
+    insn32(0xd51b4400); #  msr fpcr, x0
+}
+
+sub write_set_fpscr($)
+{
+    my ($fpscr) = @_;
+    if ($is_aarch64) {
+        write_set_fpscr_aarch64($fpscr);
+    } else {
+        write_set_fpscr_arm($fpscr);
+    }
 }
 
 sub dump_insn_details($$)
@@ -897,9 +938,7 @@ sub write_test_code($$$)
     print "Generating code using patterns: @keys...\n";
     progress_start(78, $numinsns);
 
-    if (!$is_aarch64) {
-        write_set_fpscr($fpscr);
-    }
+    write_set_fpscr($fpscr);
 
     if (grep { defined($insn_details{$_}->{blocks}->{"memory"}) } @keys) {
         write_memblock_setup();
@@ -1149,7 +1188,7 @@ and outputfile is the generated raw binary file.
 
 Valid options:
     --numinsns n : generate n instructions (default is 10000)
-    --fpscr n    : set initial FPSCR value (default is 0)
+    --fpscr n    : set initial FPSCR (arm) or FPCR (aarch64) value (default is 0)
     --condprob p : make instructions conditional with probability p
                    (default is 0, ie all instructions are always executed)
     --pattern re[,re...] : only use instructions matching regular expression
