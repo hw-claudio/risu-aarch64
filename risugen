@@ -19,6 +19,8 @@ use Getopt::Long;
 use Data::Dumper;
 use Text::Balanced qw { extract_bracketed extract_multiple };
 
+my $periodic_reg_random = 1;
+
 my @insns;
 my %insn_details;
 
@@ -955,7 +957,7 @@ sub write_test_code($$$)
         write_risuop($OP_COMPARE);
         # Rewrite the registers periodically. This avoids the tendency
         # for the VFP registers to decay to NaNs and zeroes.
-        if (($i % 100) == 0) {
+        if ($periodic_reg_random && ($i % 100) == 0) {
             write_random_register_data();
             write_switch_to_test_mode();
         }
