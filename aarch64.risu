@@ -17,11 +17,268 @@
 # XXX NIY: branch, exception generation, system insns
 # XXX NIY: PC-related instructions
 # XXX NIY: SP-related instructions
-# XXX NIY: floating point and SIMD
+# XXX NIY: floating point and SIMD variants of insns
+# XXX NIY: floating point and SIMD specific insns
 
 # - - - - 1 - 0 - - - - - - - - - - - - - - - Loads and stores
 # C3.3 Loads and stores
-# NIY: SIMD & FP instructions and variants
+
+# C3.3.1 AdvSIMD load/store multiple structures
+# C3.3.2 AdvSIMD load/store multiple structures (post-indexed)
+# C3.3.3 AdvSIMD load/store single structure
+# C3.3.4 AdvSIMD load/store single structure (post-indexed)
+#
+# C6.3.275 ST1 (multiple structures) - no offset
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  0  0  0  0  0  0  0  0  0  x  x  1  x size   Rn   Rt
+#                            [L]                  [  opcode  ]
+
+ST1m_1 A64_V 0 Q:1 00110000000000 0111 size:2 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1 << $size); reg($rn); }
+
+ST1m_2 A64_V 0 Q:1 00110000000000 1010 size:2 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1 << $size); reg($rn); }
+
+ST1m_3 A64_V 0 Q:1 00110000000000 0110 size:2 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1 << $size); reg($rn); }
+
+ST1m_4 A64_V 0 Q:1 00110000000000 0010 size:2 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1 << $size); reg($rn); }
+
+# Post-index (reg/immediate)
+# 31 30 29 28 27 26 25 24 23 22 21 20    16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  0  1  0  0    Rm     x  x  1  x  size  Rn   Rt
+#                            [L]            [  opcode  ]
+
+ST1m_1p A64_V 0 Q:1 001100100 rm:5 0111 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(1 << $size); reg($rn); }
+
+ST1m_2p A64_V 0 Q:1 001100100 rm:5 1010 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(1 << $size); reg($rn); }
+
+ST1m_3p A64_V 0 Q:1 001100100 rm:5 0110 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(1 << $size); reg($rn); }
+
+ST1m_4p A64_V 0 Q:1 001100100 rm:5 0010 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(1 << $size); reg($rn); }
+
+# C6.3.276 ST1 (single structure) - no offset
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9    5 4    0
+#  0  Q  0  0  1  1  0  1  0  0  0  0  0  0  0  0  x  x  0  S  size   Rn     Rt
+#                            [L][R]               [  opc  ]
+#              8-bit variant (opcode = 000)
+#    ST1 { <Vt>.B }[<index>], [<Xn|SP>]
+#              16-bit variant (opcode = 010, size = x0)
+#    ST1 { <Vt>.H }[<index>], [<Xn|SP>]
+#              32-bit variant (opcode = 100, size = 00)
+#    ST1 { <Vt>.S }[<index>], [<Xn|SP>]
+#              64-bit variant (opcode = 100, S = 0, size = 01)
+#    ST1 { <Vt>.D }[<index>], [<Xn|SP>]
+
+ST1s_B A64_V 0 Q:1 00110100000000 000 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1); reg($rn); }
+
+ST1s_H A64_V 0 Q:1 00110100000000 010 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && !($size & 0x01); } \
+!memory { align(2); reg($rn); }
+
+ST1s_S A64_V 0 Q:1 00110100000000 100 S:1 00 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(4); reg($rn); }
+
+ST1s_D A64_V 0 Q:1 00110100000000 100 0 01 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(8); reg($rn); }
+
+# Post-index (reg/immediate)
+#  31 30 29 28 27 26 25 24 23 22 21 20    16 15 14 13 12 11 10 9  5 4  0
+#   0  Q  0  0  1  1  0  1  1  0  0    Rm     x  x  0  S size   Rn   Rt
+#                             [L][R]          opcode
+
+ST1s_Bp A64_V 0 Q:1 001101100 rm:5 000 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(1); reg($rn); }
+
+ST1s_Hp A64_V 0 Q:1 001101100 rm:5 010 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
+!memory { align(2); reg($rn); }
+
+ST1s_Sp A64_V 0 Q:1 001101100 rm:5 100 S:1 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(4); reg($rn); }
+
+ST1s_Dp A64_V 0 Q:1 001101100 rm:5 100 0 01 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(8); reg($rn); }
+
+# C6.3.277 ST2 (multiple structures) - no offset
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  0  0  0  0  0  0  0  0  0  1  0  0  0  size  Rn   Rt
+#                            [L]                  [  opcode  ]
+
+ST2m A64_V 0 Q:1 00110000000000 1000 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && !($size == 3 && $Q == 0); } \
+!memory { align(1 << $size); reg($rn); }
+
+# Post-index
+# 31 30 29 28 27 26 25 24 23 22 21 20          16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  0  1  0  0       Rm        1  0  0  0  size  Rn   Rt
+#                            [L]                  [  opcode  ]
+
+ST2m_p A64_V 0 Q:1 001100100 rm:5 1000 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rm != $rn && !($size == 3 && $Q == 0); } \
+!memory { align(1 << $size); reg($rn); }
+
+# C6.3.278 ST2 (single structure) - no offset
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  1  0  0  1  0  0  0  0  0  x  x  0  S  size  Rn   Rt
+#                            [L][R]               [  opc  ]
+
+ST2s_B A64_V 0 Q:1 00110100100000 000 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1); reg($rn); }
+
+ST2s_H A64_V 0 Q:1 00110100100000 010 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && !($size & 0x01); } \
+!memory { align(2); reg($rn); }
+
+ST2s_S A64_V 0 Q:1 00110100100000 100 S:1 00 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(4); reg($rn); }
+
+ST2s_D A64_V 0 Q:1 00110100100000 100 0 01 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(8); reg($rn); }
+
+# Post-index
+# 31 30 29 28 27 26 25 24 23 22 21 20    16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  1  1  0  1    Rm     x  x  0  S  size  Rn   Rt
+#                            [L][R]         [  opc  ]
+
+ST2s_Bp A64_V 0 Q:1 001101101 rm:5 000 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(1); reg($rn); }
+
+ST2s_Hp A64_V 0 Q:1 001101101 rm:5 010 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
+!memory { align(2); reg($rn); }
+
+ST2s_Sp A64_V 0 Q:1 001101101 rm:5 100 S:1 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(4); reg($rn); }
+
+ST2s_Dp A64_V 0 Q:1 001101101 rm:5 100 0 01 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(8); reg($rn); }
+
+# C6.3.279 ST3 (multiple structures) - no offset
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  0  0  0  0  0  0  0  0  0  0  1  0  0  size  Rn   Rt
+#                            [L]                  [  opcode  ]
+ST3m A64_V 0 Q:1 00110000000000 0100 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && !($size == 3 && $Q == 0); } \
+!memory { align(1 << $size); reg($rn); }
+
+# Post-index
+# 31 30 29 28 27 26 25 24 23 22 21 20          16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  0  1  0  0       Rm        0  1  0  0  size  Rn   Rt
+#                            [L]                  [  opcode  ]
+
+ST3m_p A64_V 0 Q:1 001100100 rm:5 0100 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rm != $rn && !($size == 3 && $Q == 0); } \
+!memory { align(1 << $size); reg($rn); }
+
+# C6.3.280 ST3 (single structure) - no offset
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  1  0  0  0  0  0  0  0  0  x  x  1  S  size  Rn   Rt
+#                            [L][R]               [  opc  ]
+
+ST3s_B A64_V 0 Q:1 00110100000000 001 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1); reg($rn); }
+
+ST3s_H A64_V 0 Q:1 00110100000000 011 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && !($size & 0x01); } \
+!memory { align(2); reg($rn); }
+
+ST3s_S A64_V 0 Q:1 00110100000000 101 S:1 00 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(4); reg($rn); }
+
+ST3s_D A64_V 0 Q:1 00110100000000 101 0 01 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(8); reg($rn); }
+
+# Post-index
+# 31 30 29 28 27 26 25 24 23 22 21 20    16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  1  1  0  0    Rm     x  x  1  S  size  Rn   Rt
+#                            [L][R]         [  opc  ]
+
+ST3s_Bp A64_V 0 Q:1 001101100 rm:5 001 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(1); reg($rn); }
+
+ST3s_Hp A64_V 0 Q:1 001101100 rm:5 011 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
+!memory { align(2); reg($rn); }
+
+ST3s_Sp A64_V 0 Q:1 001101100 rm:5 101 S:1 00 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(4); reg($rn); }
+
+ST3s_Dp A64_V 0 Q:1 001101100 rm:5 101 0 01 rn:5 rt:5 \
+!constraints { $rn != 31 && $rn != $rm; } \
+!memory { align(8); reg($rn); }
+
+# C6.3.281 ST4 (multiple structures) - no offset
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  size  Rn   Rt
+#                            [L]                  [  opcode  ]
+
+ST4m A64_V 0 Q:1 00110000000000 0000 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && !($size == 3 && $Q == 0); } \
+!memory { align(1 << $size); reg($rn); }
+
+# Post-index
+# 31 30 29 28 27 26 25 24 23 22 21 20  16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  0  1  0  0   Rm    0  0  0  0  size  Rn   Rt
+#                            [L]          [  opcode  ]
+
+ST4m_p A64_V 0 Q:1 001100100 rm:5 0000 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $rm != $rn && !($size == 3 && $Q == 0); } \
+!memory { align(1 << $size); reg($rn); }
+
+# C6.3.282 ST4 (single structure) - no offset
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  0  1  0  0  1  0  0  0  0  0  x  x  1  S  size  Rn   Rt
+#                            [L][R]               [  opc  ]
+
+ST4s_B A64_V 0 Q:1 00110100100000 001 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(1); reg($rn); }
+
+ST4s_H A64_V 0 Q:1 00110100100000 011 S:1 size:2 rn:5 rt:5 \
+!constraints { $rn != 31 && !($size & 0x01); } \
+!memory { align(2); reg($rn); }
+
+ST4s_S A64_V 0 Q:1 00110100100000 101 S:1 00 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(4); reg($rn); }
+
+ST4s_D A64_V 0 Q:1 00110100100000 101 0 01 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(8); reg($rn); }
+
+# NIY: SIMD/fp LD1, LD2, LD3, LD4
 
 # C3.3.5 Load register (PC-relative literal)
 # 31 30 29 28 27 26 25 24 23       5 4    0
@@ -250,6 +507,43 @@ STNP A64 10 101 0 000 0 imm:7 rtt:5 rn:5 rt:5 \
 LDNP A64 10 101 0 000 1 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt; } \
 !memory { align(16); reg_plus_imm($rn, sextract($imm, 7) * 8); }
+
+# SIMD variants
+#  opc            V           L
+#   00            1           0    SIMD STNP  32-bit
+#   00            1           1    SIMD LDNP  32-bit
+#   01            1           0    SIMD STNP  64-bit
+#   01            1           1    SIMD LDNP  64-bit
+#   10            1           0    SIMD STNP 128-bit
+#   10            1           1    SIMD LDNP 128-bit
+
+# C6.3.283 STNP (SIMD&FP) C6.3.164 LDNP (SIMD&FP)
+# 31 30 29 28 27 26 25 24 23 22 21    15 14    10 9    5 4    0
+#  opc   1  0  1  1  0  0  0  L   imm7     Rt2      Rn     Rt
+
+STNPS A64_V 00 10110000 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(8); reg_plus_imm($rn, sextract($imm, 7) * 4); }
+
+LDNPS A64_V 00 10110001 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt; } \
+!memory { align(8); reg_plus_imm($rn, sextract($imm, 7) * 4); }
+
+STNPD A64_V 01 10110000 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(16); reg_plus_imm($rn, sextract($imm, 7) * 8); }
+
+LDNPD A64_V 01 10110001 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt; } \
+!memory { align(16); reg_plus_imm($rn, sextract($imm, 7) * 8); }
+
+STNPQ A64_V 10 10110000 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31; } \
+!memory { align(32); reg_plus_imm($rn, sextract($imm, 7) * 16); }
+
+LDNPQ A64_V 10 10110001 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt; } \
+!memory { align(32); reg_plus_imm($rn, sextract($imm, 7) * 16); }
 
 # C3.3.8 Load/store register (immediate post-indexed)
 # 31 30 29 28 27 26 25 24 23 22 21 20      12 11 10 9    5 4    0
