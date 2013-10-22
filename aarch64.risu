@@ -17,7 +17,6 @@
 # XXX NIY: branch, exception generation, system insns
 # XXX NIY: PC-related instructions
 # XXX NIY: SP-related instructions
-# XXX NIY: floating point and SIMD variants of insns
 # XXX NIY: floating point and SIMD specific insns
 
 # - - - - 1 - 0 - - - - - - - - - - - - - - - Loads and stores
@@ -1126,7 +1125,6 @@ LDTR A64 11 111000 01 0 imm:9 10 rn:5 rt:5 \
 # NB: the address being accessed is the same with the exception
 # NB: of post-indexed, where the address is not offset.
 # NB: note that PRFUM has no pre/post version.
-# NIY: SIMD/fp variants
 #  size           V        opc
 #   00            0        00       STURB   -
 #   00            0        01       LDURB   -
@@ -1198,6 +1196,51 @@ LDUR A64 11 111000 01 0 imm:9 idx:2 rn:5 rt:5 \
 PRFUM A64 11 111000 10 0 imm:9 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt; } \
 !memory { align(8); reg_plus_imm($rn, sextract($imm, 9)); }
+
+# C6.3.287 STUR (SIMD&FP)
+# 31 30 29 28 27 26 25 24 23 22 21 20         12 11 10 9  5 4  0
+#  size  1  1  1  1  0  0  x  0  0      imm9      0  0  Rn   Rt
+#                [V]      [opc ]
+
+STURB A64_V 00 111100 00 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
+
+LDURB A64_V 00 111100 01 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 2; } \
+!memory { align(1); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
+
+STURH A64_V 01 111100 00 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 2; } \
+!memory { align(2); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
+
+LDURH A64_V 01 111100 01 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 2; } \
+!memory { align(2); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
+
+STURS A64_V 10 111100 00 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 2; } \
+!memory { align(4); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
+
+LDURS A64_V 10 111100 01 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 2; } \
+!memory { align(4); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
+
+STURD A64_V 11 111100 00 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 2; } \
+!memory { align(8); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
+
+LDURD A64_V 11 111100 01 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 2; } \
+!memory { align(8); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
+
+STURQ A64_V 00 111100 10 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 2; } \
+!memory { align(16); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
+
+LDURQ A64_V 00 111100 11 0 imm:9 idx:2 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 2; } \
+!memory { align(16); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 9)); }
 
 # C3.3.13 Load/store register (unsigned immediate)
 # 31 30 29 28 27 26 25 24 23 22 21         10 9    5 4    0
@@ -1332,7 +1375,6 @@ LDRQi A64_V 00 111101 11 imm:12 rn:5 rt:5 \
 # NB: the address being accessed is the same with the exception
 # NB: of post-indexed, where the address is not offset.
 # NB: note that idx=0 is not included (used for non-temporal pair)
-# NIY: SIMD & fp
 
 STPW A64 00 101 0 0 idx:2 0 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rt && $rn != $rtt && $idx != 0; } \
@@ -1353,6 +1395,35 @@ STP A64 10 101 0 0 idx:2 0 imm:7 rtt:5 rn:5 rt:5 \
 LDP A64 10 101 0 0 idx:2 1 imm:7 rtt:5 rn:5 rt:5 \
 !constraints { $rn != 31 && $rt != $rtt && $rn != $rt && $rn != $rtt && $idx != 0; } \
 !memory { align(16); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 8); }
+
+# C6.3.284 STP (SIMD&FP) post/pre signed offset
+# 31 30 29 28 27 26 25 24 23 22 21    15 14   10 9  5 4  0
+#  opc   1  0  1  1  0  0  1  0   imm7     Rt2    Rn   Rt
+#                [V]   [idx ][L]
+STPS A64_V 00 10110 idx:2 0 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 0; } \
+!memory { align(8); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 4); }
+
+LDPS A64_V 00 10110 idx:2 1 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt && $idx != 0; } \
+!memory { align(8); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 4); }
+
+STPD A64_V 01 10110 idx:2 0 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 0; } \
+!memory { align(16); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 8); }
+
+LDPD A64_V 01 10110 idx:2 1 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt && $idx != 0; } \
+!memory { align(16); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 8); }
+
+STPQ A64_V 10 10110 idx:2 0 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $idx != 0; } \
+!memory { align(32); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 16); }
+
+LDPQ A64_V 10 10110 idx:2 1 imm:7 rtt:5 rn:5 rt:5 \
+!constraints { $rn != 31 && $rt != $rtt && $idx != 0; } \
+!memory { align(32); reg_plus_imm($rn, $idx == 1 ? 0 : sextract($imm, 7) * 16); }
+
 
 # - - - 1 0 0 - - - - - - - - - - - - - - - - Data processing - immediate
 # C3.4.1 Add/subtract (immediate)
