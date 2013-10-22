@@ -713,7 +713,9 @@ sub reg_plus_reg_shifted($$$@)
 {
     # handle reg + reg LSL imm addressing mode
     my ($base, $idx, $shift, @trashed) = @_;
-    die "reg_plus_reg_shifted: bad shift size\n" if ($shift < 0 || $shift > 3);
+    if ($shift < 0 || $shift > 4 || (!$is_aarch64 && $shift == 4)) {
+        die "reg_plus_reg_shifted: bad shift size\n";
+    }
     my $savedidx = 0;
     if ($idx == 0) {
         # save the index into some other register for the
