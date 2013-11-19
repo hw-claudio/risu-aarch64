@@ -403,10 +403,11 @@ sub write_random_fpreg()
     }
 }
 
-sub write_random_arm_regdata()
+sub write_random_arm_regdata($)
 {
+    my ($fp_enabled) = @_;
     # TODO hardcoded, also no d16-d31 initialisation
-    my $vfp = 2;  # 0 : no vfp, 1 : vfpd16, 2 : vfpd32
+    my $vfp = $fp_enabled ? 2 : 0; # 0 : no vfp, 1 : vfpd16, 2 : vfpd32
     write_switch_to_arm();
     
     # initialise all registers
@@ -425,7 +426,7 @@ sub write_random_arm_regdata()
     my $datalen = 14;
     $datalen += (32 * $vfp);
     insn32(0xea000000 + ($datalen-1));    # b next
-    for (0..(($vfp * 16) - 1)) {
+    for (0..(($vfp * 16) - 1)) { # NB: never done for $vfp == 0
         write_random_fpreg();
     }
     #  .word [14 words of data for r0..r12,r14]
@@ -437,13 +438,8 @@ sub write_random_arm_regdata()
     insn32(0xe32cf000);
 }
 
-sub write_random_aarch64_regdata()
+sub write_random_aarch64_fpdata()
 {
-    # clear flags
-    insn32(0xd53b4200);                      # mrs     x0, nzcv
-    insn32(0x52000000 | aarch64_limm(4, 4)); # eori w0, w0, 0xf0000000
-    insn32(0xd51b4200);                      # msr     nzcv, x0
-
     # load floating point / SIMD registers
     my $align = 16;
     my $datalen = 32 * 16 + $align;
@@ -463,6 +459,20 @@ sub write_random_aarch64_regdata()
     for (my $rt = 0; $rt <= 31; $rt += 4) {
         insn32(0x4cdf2c00 | $rt); # ld1 {v0.2d-v3.2d}, [x0], #64
     }
+}
+
+sub write_random_aarch64_regdata($)
+{
+    my ($fp_enabled) = @_;
+    # clear flags
+    insn32(0xd53b4200);                      # mrs     x0, nzcv
+    insn32(0x52000000 | aarch64_limm(4, 4)); # eori w0, w0, 0xf0000000
+    insn32(0xd51b4200);                      # msr     nzcv, x0
+
+    if ($fp_enabled) {
+        # load floating point / SIMD registers
+        write_random_aarch64_fpdata();
+    }
 
     # general purpose registers
     for (my $i = 0; $i <= 30; $i++) {
@@ -471,12 +481,14 @@ sub write_random_aarch64_regdata()
     }
 }
 
-sub write_random_register_data()
+sub write_random_register_data($)
 {
+    my ($fp_enabled) = @_;
+
     if ($is_aarch64) {
-        write_random_aarch64_regdata();
+        write_random_aarch64_regdata($fp_enabled);
     } else {
-        write_random_arm_regdata();
+        write_random_arm_regdata($fp_enabled);
     }
 
     write_risuop($OP_COMPARE);
@@ -919,9 +931,9 @@ sub progress_end()
     $| = 0;
 }
 
-sub write_test_code($$$)
+sub write_test_code($$$$)
 {
-    my ($condprob, $fpscr, $numinsns) = @_;
+    my ($condprob, $fpscr, $numinsns, $fp_enabled) = @_;
     # convert from probability that insn will be conditional to
     # probability of forcing insn to unconditional
     $condprob = 1 - $condprob;
@@ -942,13 +954,15 @@ sub write_test_code($$$)
     print "Generating code using patterns: @keys...\n";
     progress_start(78, $numinsns);
 
-    write_set_fpscr($fpscr);
+    if ($fp_enabled) {
+        write_set_fpscr($fpscr);
+    }
 
     if (grep { defined($insn_details{$_}->{blocks}->{"memory"}) } @keys) {
         write_memblock_setup();
     }
     # memblock setup doesn't clean its registers, so this must come afterwards.
-    write_random_register_data();
+    write_random_register_data($fp_enabled);
     write_switch_to_test_mode();
 
     for my $i (1..$numinsns) {
@@ -960,7 +974,7 @@ sub write_test_code($$$)
         # Rewrite the registers periodically. This avoids the tendency
         # for the VFP registers to decay to NaNs and zeroes.
         if ($periodic_reg_random && ($i % 100) == 0) {
-            write_random_register_data();
+            write_random_register_data($fp_enabled);
             write_switch_to_test_mode();
         }
         progress_update($i);
@@ -1193,13 +1207,15 @@ and outputfile is the generated raw binary file.
 Valid options:
     --numinsns n : generate n instructions (default is 10000)
     --fpscr n    : set initial FPSCR (arm) or FPCR (aarch64) value (default is 0)
-    --condprob p : make instructions conditional with probability p
+    --condprob p : [ARM only] make instructions conditional with probability p
                    (default is 0, ie all instructions are always executed)
     --pattern re[,re...] : only use instructions matching regular expression
                    Each re must match a full word (that is, we match on
                    the perl regex '\\b((re)|(re))\\b'). This means that
                    'VMULL' will match 'VMULL A1' and 'VMULL A2' but not
                    'VMULL_scalar A1'. This is generally what you wanted.
+    --no-fp      : disable floating point: no fp init, randomization etc.
+                   Useful to test before support for FP is available.
     --help       : print this message
 EOT
 }
@@ -1209,6 +1225,7 @@ sub main()
     my $numinsns = 10000;
     my $condprob = 0;
     my $fpscr = 0;
+    my $fp_enabled = 1;
     my ($infile, $outfile);
 
     GetOptions( "help" => sub { usage(); exit(0); },
@@ -1221,6 +1238,7 @@ sub main()
                         die "Value \"$condprob\" invalid for option condprob (must be between 0 and 1)\n";
                     }
                 },
+                "no-fp" => sub { $fp_enabled = 0; },
         ) or return 1;
     # allow "--pattern re,re" and "--pattern re --pattern re"
     @pattern_re = split(/,/,join(',',@pattern_re));
@@ -1236,7 +1254,7 @@ sub main()
     parse_config_file($infile);
     
     open_bin($outfile);
-    write_test_code($condprob, $fpscr, $numinsns);
+    write_test_code($condprob, $fpscr, $numinsns, $fp_enabled);
     close_bin();
     return 0;
 }
