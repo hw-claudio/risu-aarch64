@@ -1691,5 +1691,95 @@ ANDS A64 sf:1 11 01010 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 BICS A64 sf:1 11 01010 shft:2 1 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
 
-# C3.6 Data processing - SIMD and floating point (TODO)
+# C3.6 Data processing - SIMD and floating point
+
+# C3.6.1 AdvSIMD EXT
+# 31 30 29 28 27 26 25 24 23 22 21 20  16|15|14    11|10|9  5 4  0
+#  0  Q  1  0  1  1  1  0  0  0  0   Rm  | 0|  imm4  | 0| Rn   Rd
+
+# XXX BUG in objdump / libopcode? $Q==1 && $imm & 0x08 should be allowed,
+# instead the instruction shows as undefined. Check again with latest objdump.
+# problem encountered with linaro aarch64 cross objdump
+# crosstool-NG linaro-1.13.1-4.7-2013.01-20130125 - 2.23.51.20121016
+# XXX
+# 1a59c:       6e0e72f9        .inst   0x6e0e72f9 ; undefined [XXX]
+
+EXT A64_V 0 Q:1 101110000 rm:5 0 imm:4 0 rn:5 rd:5 \
+!constraints { !($imm & 0x08); }
+
+# C3.6.2 AdvSIMD TBL/TBX
+# 31 30 29 28 27 26 25 24 23 22 21 20  16 15 14 13 12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  1  0  0  0  0   Rm    0  len  op  0  0  Rn   Rd
+
+TBL A64_V 0 Q:1 001110000 rm:5 0 len:2 0 00 rn:5 rd:5
+TBX A64_V 0 Q:1 001110000 rm:5 0 len:2 1 00 rn:5 rd:5
+
+# C3.6.3 AdvSIMD ZIP/UZP/TRN
+# 31 30 29 28 27 26 25 24 23 22 21 20  16 15 14   12 11 10 9  5 4  0
+#  0  Q  0  0  1  1  1  0  size  0   Rm    0 opcode   1  0  Rn   Rd
+
+UZP1 A64_V 0 Q:1 001110 size:2 0 rm:5 0 001 10 rn:5 rd:5 \
+!constraints { !($size == 3 && $Q == 0); }
+TRN1 A64_V 0 Q:1 001110 size:2 0 rm:5 0 010 10 rn:5 rd:5 \
+!constraints { !($size == 3 && $Q == 0); }
+ZIP1 A64_V 0 Q:1 001110 size:2 0 rm:5 0 011 10 rn:5 rd:5 \
+!constraints { !($size == 3 && $Q == 0); }
+
+UZP2 A64_V 0 Q:1 001110 size:2 0 rm:5 0 101 10 rn:5 rd:5 \
+!constraints { !($size == 3 && $Q == 0); }
+TRN2 A64_V 0 Q:1 001110 size:2 0 rm:5 0 110 10 rn:5 rd:5 \
+!constraints { !($size == 3 && $Q == 0); }
+ZIP2 A64_V 0 Q:1 001110 size:2 0 rm:5 0 111 10 rn:5 rd:5 \
+!constraints { !($size == 3 && $Q == 0); }
+
+# C3.6.4 AdvSIMD across lanes
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16  12 11 10 9  5 4  0
+#  0  Q  U  0  1  1  1  0  size  1  1  0  0  0 opcode  1  0  Rn   Rd
+
+SADDLV A64_V 0 Q:1 0 01110 size:2 11000 00011 10 rn:5 rd:5 \
+!constraints { $size < 2 || ($size == 2 && $Q == 1); }
+SMAXV A64_V 0 Q:1 0 01110 size:2 11000 01010 10 rn:5 rd:5 \
+!constraints { $size < 2 || ($size == 2 && $Q == 1); }
+SMINV A64_V 0 Q:1 0 01110 size:2 11000 11010 10 rn:5 rd:5 \
+!constraints { $size < 2 || ($size == 2 && $Q == 1); }
+
+ADDV A64_V 0 Q:1 0 01110 size:2 11000 11011 10 rn:5 rd:5 \
+!constraints { $size < 2 || ($size == 2 && $Q == 1); }
+
+UADDLV A64_V 0 Q:1 1 01110 size:2 11000 00011 10 rn:5 rd:5 \
+!constraints { $size < 2 || ($size == 2 && $Q == 1); }
+UMAXV A64_V 0 Q:1 1 01110 size:2 11000 01010 10 rn:5 rd:5 \
+!constraints { $size < 2 || ($size == 2 && $Q == 1); }
+UMINV A64_V 0 Q:1 1 01110 size:2 11000 11010 10 rn:5 rd:5 \
+!constraints { $size < 2 || ($size == 2 && $Q == 1); }
+
+FMAXNMV A64_V 0 1 1 01110 00 11000 01100 10 rn:5 rd:5
+FMAXV A64_V 0 1 1 01110 00 11000 01111 10 rn:5 rd:5
+
+FMINNMV A64_V 0 1 1 01110 10 11000 01100 10 rn:5 rd:5
+FMINV A64_V 0 1 1 01110 10 11000 01111 10 rn:5 rd:5
+
+# C3.6.5 AdvSIMD copy
+# 31 30 29 28 27 26 25 24 23 22 21 20    16 15 14    11 10 9  5 4  0
+#  0  Q op  0  1  1  1  0  0  0  0   imm5    0   imm4    1  Rn   Rd
+
+DUPe A64_V 0 Q:1 0 01110000 imm:5 0 0000 1 rn:5 rd:5 \
+!constraints { ($imm & 0x07) || (($imm & 0x0f) && $Q == 1); }
+DUP A64_V 0 Q:1 0 01110000 imm:5 0 0001 1 rn:5 rd:5 \
+!constraints { ($imm & 0x07) || (($imm & 0x0f) && $Q == 1); }
+
+SMOV A64_V 0 Q:1 0 01110000 imm:5 0 0101 1 rn:5 rd:5 \
+!constraints { ($imm & 0x03) || (($imm & 0x07) && $Q == 1); }
+UMOV A64_V 0 Q:1 0 01110000 imm:5 0 0111 1 rn:5 rd:5 \
+!constraints { ($Q == 0 && ($imm & 0x07)) || ($Q == 1 && ($imm & 0x0f == 0x80)); }
+
+INS A64_V 0 1 0 01110000 imm:5 0 0011 1 rn:5 rd:5 \
+!constraints { ($imm & 0x0f); }
+INSe A64_V 0 1 1 01110000 imm:5 0 immm:4 1 rn:5 rd:5 \
+!constraints { ($imm & 0x0f); }
+
+# C3.6.6 AdvSIMD modified immediate
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16  15     12  11 10 9 8 7 6 5 4  0
+#  0  Q op  0  1  1  1  1  0  0  0  0  0  a  b  c [  cmode  ] o2  1 d e f g h  Rd
+
 # NIY
