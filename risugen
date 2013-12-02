@@ -38,7 +38,8 @@ my $is_aarch64 = 0; # are we in aarch64 mode?
 my $is_thumb = 0;   # are we currently in Thumb mode?
 my $test_thumb = 0; # should test code be Thumb mode?
 
-my @pattern_re = ();
+my @pattern_re = ();            # include pattern
+my @not_pattern_re = ();        # exclude pattern
 
 my $bytecount;
 
@@ -947,6 +948,11 @@ sub write_test_code($$$$)
         my $re = '\b((' . join(')|(',@pattern_re) . '))\b';
         @keys = grep /$re/, @keys;
     }
+    # exclude any specifics
+    if (@not_pattern_re) {
+        my $re = '\b((' . join(')|(',@not_pattern_re) . '))\b';
+        @keys = grep !/$re/, @keys;
+    }
     if (!@keys) {
         print STDERR "No instruction patterns available! (bad config file or --pattern argument?)\n";
         exit(1);
@@ -1214,7 +1220,11 @@ Valid options:
                    the perl regex '\\b((re)|(re))\\b'). This means that
                    'VMULL' will match 'VMULL A1' and 'VMULL A2' but not
                    'VMULL_scalar A1'. This is generally what you wanted.
-    --no-fp      : disable floating point: no fp init, randomization etc.
+    --not-pattern re[,re...] : exclude patterns matching regular expression.
+                   These RE's are applied after the matching pattern which
+                   is useful if you want to exclude a specific instruction from
+                   a general set you have excluded.
+     --no-fp      : disable floating point: no fp init, randomization etc.
                    Useful to test before support for FP is available.
     --help       : print this message
 EOT
@@ -1232,7 +1242,8 @@ sub main()
                 "numinsns=i" => \$numinsns,
                 "fpscr=o" => \$fpscr,
                 "pattern=s" => \@pattern_re,
-                "condprob=f" => sub { 
+                "not-pattern=s" => \@not_pattern_re,
+                "condprob=f" => sub {
                     $condprob = $_[1];
                     if ($condprob < 0.0 || $condprob > 1.0) {
                         die "Value \"$condprob\" invalid for option condprob (must be between 0 and 1)\n";
@@ -1242,6 +1253,7 @@ sub main()
         ) or return 1;
     # allow "--pattern re,re" and "--pattern re --pattern re"
     @pattern_re = split(/,/,join(',',@pattern_re));
+    @not_pattern_re = split(/,/,join(',',@not_pattern_re));
 
     if ($#ARGV != 1) {
         usage();
