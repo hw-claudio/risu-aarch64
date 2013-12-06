@@ -90,6 +90,9 @@ ST1_H A64_V 0 Q:1 001101000 00000 010 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
 
+# ReservedValue: break !(size & 0x01) constraint
+ST1_H_RES A64_V 0 Q:1 001101000 00000 010 S:1 size:1 1 rn:5 rt:5
+
 ST1_S A64_V 0 Q:1 001101000 00000 100 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31; } \
 !memory { align(4); reg($rn); }
@@ -111,6 +114,9 @@ ST1_Hp A64_V 0 Q:1 001101100 rm:5 010 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
 
+# ReservedValue: break (!size & 0x01) constraint
+ST1_Hp_RES A64_V 0 Q:1 001101100 rm:5 010 S:1 size:1 1 rn:5 rt:5
+
 ST1_Sp A64_V 0 Q:1 001101100 rm:5 100 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm; } \
 !memory { align(4); reg($rn); }
@@ -128,6 +134,9 @@ ST2m A64_V 0 Q:1 001100000 00000 1000 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
 
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+ST2m_RES A64_V 0 0 001100000 00000 1000 11 rn:5 rt:5
+
 # Post-index
 # 31 30 29 28 27 26 25 24 23 22 21 20          16 15 14 13 12 11 10 9  5 4  0
 #  0  Q  0  0  1  1  0  0  1  0  0       Rm        1  0  0  0  size  Rn   Rt
@@ -136,6 +145,9 @@ ST2m A64_V 0 Q:1 001100000 00000 1000 size:2 rn:5 rt:5 \
 ST2m_p A64_V 0 Q:1 001100100 rm:5 1000 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
+
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+ST2m_p_RES A64_V 0 0 001100100 rm:5 1000 11 rn:5 rt:5
 
 # C6.3.278 ST2 (single structure) - no offset
 # 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
@@ -149,6 +161,9 @@ ST2_B A64_V 0 Q:1 001101001 00000 000 S:1 size:2 rn:5 rt:5 \
 ST2_H A64_V 0 Q:1 001101001 00000 010 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+# ReservedValue: break the !($size & 0x01) constraint
+ST2_H_RES A64_V 0 Q:1 001101001 00000 010 S:1 size:1 1 rn:5 rt:5
 
 ST2_S A64_V 0 Q:1 001101001 00000 100 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31; } \
@@ -171,6 +186,9 @@ ST2_Hp A64_V 0 Q:1 001101101 rm:5 010 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
 
+# ReservedValue: break the !($size & 0x01) constraint
+ST2_Hp_RES A64_V 0 Q:1 001101101 rm:5 010 S:1 size:1 1 rn:5 rt:5
+
 ST2_Sp A64_V 0 Q:1 001101101 rm:5 100 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm; } \
 !memory { align(4); reg($rn); }
@@ -187,6 +205,9 @@ ST3m A64_V 0 Q:1 001100000 00000 0100 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
 
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+ST3m_RES A64_V 0 0 001100000 00000 0100 11 rn:5 rt:5
+
 # Post-index
 # 31 30 29 28 27 26 25 24 23 22 21 20          16 15 14 13 12 11 10 9  5 4  0
 #  0  Q  0  0  1  1  0  0  1  0  0       Rm        0  1  0  0  size  Rn   Rt
@@ -195,6 +216,9 @@ ST3m A64_V 0 Q:1 001100000 00000 0100 size:2 rn:5 rt:5 \
 ST3m_p A64_V 0 Q:1 001100100 rm:5 0100 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rm != $rn && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
+
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+ST3m_p_RES A64_V 0 0 001100100 rm:5 0100 11 rn:5 rt:5
 
 # C6.3.280 ST3 (single structure) - no offset
 # 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
@@ -208,6 +232,9 @@ ST3_B A64_V 0 Q:1 001101000 00000 001 S:1 size:2 rn:5 rt:5 \
 ST3_H A64_V 0 Q:1 001101000 00000 011 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+# ReservedValue: break the !($size & 0x01) constraint
+ST3_H_RES A64_V 0 Q:1 001101000 00000 011 S:1 size:1 1 rn:5 rt:5
 
 ST3_S A64_V 0 Q:1 001101000 00000 101 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31; } \
@@ -230,6 +257,9 @@ ST3_Hp A64_V 0 Q:1 001101100 rm:5 011 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
 
+# ReservedValue: break the !($size & 0x01) constraint
+ST3_Hp_RES A64_V 0 Q:1 001101100 rm:5 011 S:1 size:1 1 rn:5 rt:5
+
 ST3_Sp A64_V 0 Q:1 001101100 rm:5 101 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm; } \
 !memory { align(4); reg($rn); }
@@ -247,6 +277,9 @@ ST4m A64_V 0 Q:1 001100000 00000 0000 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
 
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+ST4m_RES A64_V 0 0 001100000 00000 0000 11 rn:5 rt:5
+
 # Post-index
 # 31 30 29 28 27 26 25 24 23 22 21 20  16 15 14 13 12 11 10 9  5 4  0
 #  0  Q  0  0  1  1  0  0  1  0  0   Rm    0  0  0  0  size  Rn   Rt
@@ -255,6 +288,9 @@ ST4m A64_V 0 Q:1 001100000 00000 0000 size:2 rn:5 rt:5 \
 ST4m_p A64_V 0 Q:1 001100100 rm:5 0000 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rm != $rn && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
+
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+ST4m_p_RES A64_V 0 0 001100100 rm:5 0000 11 rn:5 rt:5
 
 # C6.3.282 ST4 (single structure) - no offset
 # 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
@@ -268,6 +304,9 @@ ST4_B A64_V 0 Q:1 001101001 00000 001 S:1 size:2 rn:5 rt:5 \
 ST4_H A64_V 0 Q:1 001101001 00000 011 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+# ReservedValue: break the !($size & 0x01) constraint
+ST4_H_RES A64_V 0 Q:1 001101001 00000 011 S:1 size:1 1 rn:5 rt:5
 
 ST4_S A64_V 0 Q:1 001101001 00000 101 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31; } \
@@ -289,6 +328,9 @@ ST4_Bp A64_V 0 Q:1 001101101 rm:5 001 S:1 size:2 rn:5 rt:5 \
 ST4_Hp A64_V 0 Q:1 001101101 rm:5 011 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+# ReservedValue: break the !($size & 0x01) constraint
+ST4_Hp_RES A64_V 0 Q:1 001101101 rm:5 011 S:1 size:1 1 rn:5 rt:5
 
 ST4_Sp A64_V 0 Q:1 001101101 rm:5 101 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm; } \
@@ -354,6 +396,9 @@ LD1_H A64_V 0 Q:1 001101010 00000 010 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
 
+# ReservedValue: break the !($size & 0x01) constraint
+LD1_H_RES A64_V 0 Q:1 001101010 00000 010 S:1 size:1 1 rn:5 rt:5
+
 LD1_S A64_V 0 Q:1 001101010 00000 100 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31; } \
 !memory { align(4); reg($rn); }
@@ -374,6 +419,9 @@ LD1_Bp A64_V 0 Q:1 001101110 rm:5 000 S:1 size:2 rn:5 rt:5 \
 LD1_Hp A64_V 0 Q:1 001101110 rm:5 010 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+# ReservedValue: break the !($size & 0x01) constraint
+LD1_Hp_RES A64_V 0 Q:1 001101110 rm:5 010 S:1 size:1 1 rn:5 rt:5
 
 LD1_Sp A64_V 0 Q:1 001101110 rm:5 100 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm; } \
@@ -411,6 +459,9 @@ LD2m A64_V 0 Q:1 001100010 00000 1000 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
 
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+LD2m_RES A64_V 0 0 001100010 00000 1000 11 rn:5 rt:5
+
 # Post-index
 # 31 30 29 28 27 26 25 24 23 22 21 20  16 15 14 13 12 11 10 9  5 4  0
 #  0  Q  0  0  1  1  0  0  1  1  0   Rm    1  0  0  0  size  Rn   Rt
@@ -419,6 +470,9 @@ LD2m A64_V 0 Q:1 001100010 00000 1000 size:2 rn:5 rt:5 \
 LD2m_p A64_V 0 Q:1 001100110 rm:5 1000 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
+
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+LD2m_p_RES A64_V 0 0 001100110 rm:5 1000 11 rn:5 rt:5
 
 # C6.3.156 LD2 (single structure) - no offset
 # 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
@@ -432,6 +486,9 @@ LD2_B A64_V 0 Q:1 001101011 00000 000 S:1 size:2 rn:5 rt:5 \
 LD2_H A64_V 0 Q:1 001101011 00000 010 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+# ReservedValue: break the !($size & 0x01) constraint
+LD2_H_RES A64_V 0 Q:1 001101011 00000 010 S:1 size:1 1 rn:5 rt:5
 
 LD2_S A64_V 0 Q:1 001101011 00000 100 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31; } \
@@ -453,6 +510,9 @@ LD2_Bp A64_V 0 Q:1 001101111 rm:5 000 S:1 size:2 rn:5 rt:5 \
 LD2_Hp A64_V 0 Q:1 001101111 rm:5 010 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+# ReservedValue: break the !($size & 0x01) constraint
+LD2_Hp_RES A64_V 0 Q:1 001101111 rm:5 010 S:1 size:1 1 rn:5 rt:5
 
 LD2_Sp A64_V 0 Q:1 001101111 rm:5 100 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm; } \
@@ -489,6 +549,9 @@ LD3m A64_V 0 Q:1 001100010 00000 0100 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
 
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+LD3m_RES A64_V 0 0 001100010 00000 0100 11 rn:5 rt:5
+
 # Post-index
 # 31 30 29 28 27 26 25 24 23 22 21 20    16 15 14 13 12 11 10 9  5 4  0
 #  0  Q  0  0  1  1  0  0  1  1  0    Rm     0  1  0  0  size  Rn   Rt
@@ -497,6 +560,9 @@ LD3m A64_V 0 Q:1 001100010 00000 0100 size:2 rn:5 rt:5 \
 LD3m_p A64_V 0 Q:1 001100110 rm:5 0100 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
+
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+LD3m_p_RES A64_V 0 0 001100110 rm:5 0100 11 rn:5 rt:5
 
 # C6.3.159 LD3 (single structure) - no offset
 # 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
@@ -510,6 +576,9 @@ LD3_B A64_V 0 Q:1 001101010 00000 001 S:1 size:2 rn:5 rt:5 \
 LD3_H A64_V 0 Q:1 001101010 00000 011 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+# ReservedValue: break the !($size & 0x01) constraint
+LD3_H_RES A64_V 0 Q:1 001101010 00000 011 S:1 size:1 1 rn:5 rt:5
 
 LD3_S A64_V 0 Q:1 001101010 00000 101 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31; } \
@@ -531,6 +600,8 @@ LD3_Bp A64_V 0 Q:1 001101110 rm:5 001 S:1 size:2 rn:5 rt:5 \
 LD3_Hp A64_V 0 Q:1 001101110 rm:5 011 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+LD3_Hp_RES A64_V 0 Q:1 001101110 rm:5 011 S:1 size:1 1 rn:5 rt:5
 
 LD3_Sp A64_V 0 Q:1 001101110 rm:5 101 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm; } \
@@ -567,6 +638,9 @@ LD4m A64_V 0 Q:1 001100010 00000 0000 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
 
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+LD4m_RES A64_V 0 0 001100010 00000 0000 11 rn:5 rt:5
+
 # Post-index
 # 31 30 29 28 27 26 25 24 23 22 21 20    16 15 14 13 12 11 10 9  5 4  0
 #  0  Q  0  0  1  1  0  0  1  1  0    Rm     0  0  0  0  size  Rn   Rt
@@ -575,6 +649,9 @@ LD4m A64_V 0 Q:1 001100010 00000 0000 size:2 rn:5 rt:5 \
 LD4m_p A64_V 0 Q:1 001100110 rm:5 0000 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size == 3 && $Q == 0); } \
 !memory { align(1 << $size); reg($rn); }
+
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+LD4m_p_RES A64_V 0 0 001100110 rm:5 0000 11 rn:5 rt:5
 
 # C6.3.162 LD4 (single structure) - no offset
 # 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9  5 4  0
@@ -588,6 +665,9 @@ LD4_B A64_V 0 Q:1 001101011 00000 001 S:1 size:2 rn:5 rt:5 \
 LD4_H A64_V 0 Q:1 001101011 00000 011 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+# ReservedValue: break the !($size & 0x01) constraint
+LD4_H_RES A64_V 0 Q:1 001101011 00000 011 S:1 size:1 1 rn:5 rt:5
 
 LD4_S A64_V 0 Q:1 001101011 00000 101 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31; } \
@@ -609,6 +689,9 @@ LD4_Bp A64_V 0 Q:1 001101111 rm:5 001 S:1 size:2 rn:5 rt:5 \
 LD4_Hp A64_V 0 Q:1 001101111 rm:5 011 S:1 size:2 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm && !($size & 0x01); } \
 !memory { align(2); reg($rn); }
+
+# ReservedValue: break the !($size & 0x01) constraint
+LD4_Hp_RES A64_V 0 Q:1 001101111 rm:5 011 S:1 size:1 1 rn:5 rt:5
 
 LD4_Sp A64_V 0 Q:1 001101111 rm:5 101 S:1 00 rn:5 rt:5 \
 !constraints { $rn != 31 && $rn != $rm; } \
@@ -1446,20 +1529,45 @@ SUBSi A64 sf:1 11 10001 0 shft:1 imm:12 rn:5 rd:5 \
 # 31 | 30 29 | 28 27 26 25 24 23| 22 | 21      16 15      10 9    5 4    0
 # sf |  opc  |  1  0  0  1  1  0|  N |    immr       imms      Rn     Rd
 #
+
 SBFM A64 sf:1 00 100110 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($sf == $sn) && ($sf == 1 || ($immr <= 0x1f && $imms <= 0x1f)); \
 }
+
+# ReservedValue: break the ($sf == $sn) constraint
+SBFM_RES1 A64 sf:1 00 100110 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $sf != $sn; }
+# ReservedValue: break the ($immr <= 0x1f) constraint
+SBFM_RES2 A64 0 00 100110 0 1 immr:5 imms:6 rn:5 rd:5
+# ReservedValue: break the ($imms <= 0x1f) constraint
+SBFM_RES3 A64 0 00 100110 0 immr:6 1 imms:5 rn:5 rd:5
 
 BFM A64 sf:1 01 100110 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($sf == $sn) && ($sf == 1 || ($immr <= 0x1f && $imms <= 0x1f)); \
 }
 
+# ReservedValue: break the ($sf == $sn) constraint
+BFM_RES1 A64 sf:1 01 100110 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $sf != $sn; }
+# ReservedValue: break the ($immr <= 0x1f) constraint
+BFM_RES2 A64 0 01 100110 0 1 immr:5 imms:6 rn:5 rd:5
+# ReservedValue: break the ($imms <= 0x1f) constraint
+BFM_RES3 A64 0 01 100110 0 immr:6 1 imms:5 rn:5 rd:5
+
 UBFM A64 sf:1 10 100110 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($sf == $sn) && ($sf == 1 || ($immr <= 0x1f && $imms <= 0x1f)); \
 }
+
+# ReservedValue: break the ($sf == $sn) constraint
+UBFM_RES1 A64 sf:1 10 100110 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $sf != $sn; }
+# ReservedValue: break the ($immr <= 0x1f) constraint
+UBFM_RES2 A64 0 10 100110 sn:1 1 immr:5 imms:6 rn:5 rd:5
+# ReservedValue: break the ($imms <= 0x1f) constraint
+UBFM_RES3 A64 0 10 100110 sn:1 immr:6 1 imms:5 rn:5 rd:5
 
 # C3.4.3 Extract
 # 31 |30 29| 28 27 26 25 24 23| 22 | 21 | 20    16 15      10 9    5 4    0
@@ -1480,12 +1588,30 @@ ANDi A64 sf:1 00 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
      ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
 }
 
+# ReservedValue: break the constraint ($sf == $sn)
+ANDi_RES1 A64 sf:1 00 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $sf != $sn; }
+# ReservedValue: break the (imms < 0x1f) constraint
+ANDi_RES2 A64 0 00 100100 0 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $imms >= 0x1f; }
+# ReservedValue: break the (imms < 0x3f) constraint
+ANDi_RES3 A64 1 00 100100 1 immr:6 111111 rn:5 rd:5
+
 ORRi A64 sf:1 01 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($rn != 31 && $rd != 31) && \
     (($sf == 0 && $sn == 0 && $imms < 0x1f) || \
      ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
 }
+
+# ReservedValue: break the constraint ($sf == $sn)
+ORRi_RES1 A64 sf:1 01 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $sf != $sn; }
+# ReservedValue: break the (imms < 0x1f) constraint
+ORRi_RES2 A64 0 01 100100 0 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $imms >= 0x1f; }
+# ReservedValue: break the (imms < 0x3f) constraint
+ORRi_RES3 A64 1 01 100100 1 immr:6 111111 rn:5 rd:5
 
 EORi A64 sf:1 10 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
@@ -1494,12 +1620,30 @@ EORi A64 sf:1 10 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
      ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
 }
 
+# ReservedValue: break the constraint ($sf == $sn)
+EORi_RES1 A64 sf:1 10 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $sf != $sn; }
+# ReservedValue: break the (imms < 0x1f) constraint
+EORi_RES2 A64 0 10 100100 0 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $imms >= 0x1f; }
+# ReservedValue: break the (imms < 0x3f) constraint
+EORi_RES3 A64 1 10 100100 1 immr:6 111111 rn:5 rd:5
+
 ANDSi A64 sf:1 11 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($rn != 31 && $rd != 31) && \
     (($sf == 0 && $sn == 0 && $imms < 0x1f) || \
      ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
 }
+
+# ReservedValue: break the constraint ($sf == $sn)
+ANDSi_RES1 A64 sf:1 11 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $sf != $sn; }
+# ReservedValue: break the (imms < 0x1f) constraint
+ANDSi_RES2 A64 0 11 100100 0 immr:6 imms:6 rn:5 rd:5 \
+!constraints { $imms >= 0x1f; }
+# ReservedValue: break the (imms < 0x3f) constraint
+ANDSi_RES3 A64 0 11 100100 0 immr:6 111111 rn:5 rd:5
 
 # C3.4.5 Move wide (immediate)
 # 31 |30 29| 28 27 26 25 24 23 | 22 21 | 20       5 4    0
@@ -1521,15 +1665,27 @@ MOVK A64 sf:1 11 100101 00 imm:16 rd:5
 
 ADDx A64 sf:1 00 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
 !constraints { $rn != 31 && $rd != 31 && $imm <= 4; }
+# ReservedValue: break the (imm <= 4) constraint
+ADDx_RES A64 sf:1 00 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
+!constraints { $imm > 4; }
 
 ADDSx A64 sf:1 01 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
 !constraints { $rn != 31 && $rd != 31 && $imm <= 4; }
+# ReservedValue: break the (imm <= 4) constraint
+ADDSx_RES A64 sf:1 01 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
+!constraints { $imm > 4; }
 
 SUBx A64 sf:1 10 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
 !constraints { $rn != 31 && $rd != 31 && $imm <= 4; }
+# ReservedValue: break the (imm <= 4) constraint
+SUBx_RES A64 sf:1 10 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
+!constraints { $imm > 4; }
 
 SUBSx A64 sf:1 11 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
 !constraints { $rn != 31 && $rd != 31 && $imm <= 4; }
+# ReservedValue: break the (imm <= 4) constraint
+SUBSx_RES A64 sf:1 11 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
+!constraints { $imm > 4; }
 
 # C3.5.2 Add/subtract (shifted register)
 # 31 30 29 28 27 26 25 24 |23 22| 21 | 20    16 15      10 9    5 4    0
@@ -1537,15 +1693,31 @@ SUBSx A64 sf:1 11 01011 00 1 rm:5 option:3 imm:3 rn:5 rd:5 \
 
 ADD A64 sf:1 00 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $shft < 3 && ($sf == 1 || $imm <= 0x1f); }
+# ReservedValue: break the ($shft < 3) constraint
+ADD_RES1 A64 sf:1 00 01011 11 0 rm:5 imm:6 rn:5 rd:5
+# ReservedValue: break the ($imm <= 0x1f) constraint
+ADD_RES2 A64 0 00 01011 shft:2 0 rm:5 1 imm:5 rn:5 rd:5
 
 ADDS A64 sf:1 01 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $shft < 3 && ($sf == 1 || $imm <= 0x1f); }
+# ReservedValue: break the ($shft < 3) constraint
+ADDS_RES1 A64 sf:1 01 01011 11 0 rm:5 imm:6 rn:5 rd:5
+# ReservedValue: break the ($imm <= 0x1f) constraint
+ADDS_RES2 A64 0 01 01011 shft:2 0 rm:5 1 imm:5 rn:5 rd:5
 
 SUB A64 sf:1 10 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $shft < 3 && ($sf == 1 || $imm <= 0x1f); }
+# ReservedValue: break the ($shft < 3) constraint
+SUB_RES1 A64 sf:1 10 01011 11 0 rm:5 imm:6 rn:5 rd:5
+# ReservedValue: break the ($imm <= 0x1f) constraint
+SUB_RES2 A64 0 10 01011 shft:2 0 rm:5 1 imm:5 rn:5 rd:5
 
 SUBS A64 sf:1 11 01011 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $shft < 3 && ($sf == 1 || $imm <= 0x1f); }
+# ReservedValue: break the ($shft < 3) constraint
+SUBS_RES1 A64 sf:1 11 01011 11 0 rm:5 imm:6 rn:5 rd:5
+# ReservedValue: break the ($imm <= 0x1f) constraint
+SUBS_RES2 A64 0 11 01011 shft:2 0 rm:5 1 imm:5 rn:5 rd:5
 
 # C3.5.3 Add/subtract (with carry)
 # 31 30 29 28 27 26 25 24 23 22 21 |20    16 15         10 9    5 4    0
@@ -1666,30 +1838,48 @@ UMULH A64 1 00 11011 110 rm:5 0 ra:5 rn:5 rd:5
 
 AND A64 sf:1 00 01010 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
+# ReservedValue: break the ($imm <= 0x1f) constraint
+AND_RES A64 0 00 01010 shft:2 0 rm:5 1 imm:5 rn:5 rd:5
 
 BIC A64 sf:1 00 01010 shft:2 1 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
+# ReservedValue: break the ($imm <= 0x1f) constraint
+BIC_RES A64 0 00 01010 shft:2 1 rm:5 1 imm:5 rn:5 rd:5
 
 ORR A64 sf:1 01 01010 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
+# ReservedValue: break the ($imm <= 0x1f) constraint
+ORR_RES A64 0 01 01010 shft:2 0 rm:5 1 imm:5 rn:5 rd:5
 
 ORN A64 sf:1 01 01010 shft:2 1 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $rn != 31 && ($sf == 1 || $imm <= 0x1f); }
+# ReservedValue: break the ($imm <= 0x1f) constraint
+ORN_RES A64 0 01 01010 shft:2 1 rm:5 1 imm:5 rn:5 rd:5
 
 MVN A64 sf:1 01 01010 shft:2 1 rm:5 imm:6 11111 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
+# ReservedValue: break the ($imm <= 0x1f) constraint
+MVN_RES A64 0 01 01010 shft:2 1 rm:5 1 imm:5 11111 rd:5
 
 EOR A64 sf:1 10 01010 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
+# ReservedValue: break the ($imm <= 0x1f) constraint
+EOR_RES A64 0 10 01010 shft:2 0 rm:5 1 imm:5 rn:5 rd:5
 
 EON A64 sf:1 10 01010 shft:2 1 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
+# ReservedValue: break the ($imm <= 0x1f) constraint
+EON_RES A64 0 10 01010 shft:2 1 rm:5 1 imm:5 rn:5 rd:5
 
 ANDS A64 sf:1 11 01010 shft:2 0 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
+# ReservedValue: break the ($imm <= 0x1f) constraint
+ANDS_RES A64 0 11 01010 shft:2 0 rm:5 1 imm:5 rn:5 rd:5
 
 BICS A64 sf:1 11 01010 shft:2 1 rm:5 imm:6 rn:5 rd:5 \
 !constraints { $sf == 1 || $imm <= 0x1f; }
+# ReservedValue: break the ($imm <= 0x1f) constraint
+BICS_RES A64 0 11 01010 shft:2 1 rm:5 1 imm:5 rn:5 rd:5
 
 # C3.6 Data processing - SIMD and floating point
 
@@ -1720,17 +1910,33 @@ TBX A64_V 0 Q:1 001110000 rm:5 0 len:2 1 00 rn:5 rd:5
 
 UZP1 A64_V 0 Q:1 001110 size:2 0 rm:5 0 001 10 rn:5 rd:5 \
 !constraints { !($size == 3 && $Q == 0); }
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+UZP1_RES A64_V 0 0 001110 11 0 rm:5 0 001 10 rn:5 rd:5
+
 TRN1 A64_V 0 Q:1 001110 size:2 0 rm:5 0 010 10 rn:5 rd:5 \
 !constraints { !($size == 3 && $Q == 0); }
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+TRN1_RES A64_V 0 0 001110 11 0 rm:5 0 010 10 rn:5 rd:5
+
 ZIP1 A64_V 0 Q:1 001110 size:2 0 rm:5 0 011 10 rn:5 rd:5 \
 !constraints { !($size == 3 && $Q == 0); }
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+ZIP1_RES A64_V 0 0 001110 11 0 rm:5 0 011 10 rn:5 rd:5
 
 UZP2 A64_V 0 Q:1 001110 size:2 0 rm:5 0 101 10 rn:5 rd:5 \
 !constraints { !($size == 3 && $Q == 0); }
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+UZP2_RES A64_V 0 0 001110 11 0 rm:5 0 101 10 rn:5 rd:5
+
 TRN2 A64_V 0 Q:1 001110 size:2 0 rm:5 0 110 10 rn:5 rd:5 \
 !constraints { !($size == 3 && $Q == 0); }
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+TRN2_RES A64_V 0 0 001110 11 0 rm:5 0 110 10 rn:5 rd:5
+
 ZIP2 A64_V 0 Q:1 001110 size:2 0 rm:5 0 111 10 rn:5 rd:5 \
 !constraints { !($size == 3 && $Q == 0); }
+# ReservedValue: break the !($size == 3 && $Q == 0) constraint
+ZIP2_RES A64_V 0 0 001110 11 0 rm:5 0 111 10 rn:5 rd:5
 
 # C3.6.4 AdvSIMD across lanes
 # 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16  12 11 10 9  5 4  0
@@ -1738,20 +1944,38 @@ ZIP2 A64_V 0 Q:1 001110 size:2 0 rm:5 0 111 10 rn:5 rd:5 \
 
 SADDLV A64_V 0 Q:1 0 01110 size:2 11000 00011 10 rn:5 rd:5 \
 !constraints { $size < 2 || ($size == 2 && $Q == 1); }
+# ReservedValue: break the constraint (size==2) => (Q=1)
+SADDLV_RES A64_V 0 0 0 01110 10 11000 00011 10 rn:5 rd:5
+
 SMAXV A64_V 0 Q:1 0 01110 size:2 11000 01010 10 rn:5 rd:5 \
 !constraints { $size < 2 || ($size == 2 && $Q == 1); }
+# ReservedValue: break the constraint (size==2) => (Q=1)
+SMAXV_RES A64_V 0 0 0 01110 10 11000 01010 10 rn:5 rd:5
+
 SMINV A64_V 0 Q:1 0 01110 size:2 11000 11010 10 rn:5 rd:5 \
 !constraints { $size < 2 || ($size == 2 && $Q == 1); }
+# ReservedValue: break the constraint (size==2) => (Q=1)
+SMINV_RES A64_V 0 0 0 01110 10 11000 11010 10 rn:5 rd:5
 
 ADDV A64_V 0 Q:1 0 01110 size:2 11000 11011 10 rn:5 rd:5 \
 !constraints { $size < 2 || ($size == 2 && $Q == 1); }
+# ReservedValue: break the constraint (size==2) => (Q=1)
+ADDV_RES A64_V 0 0 0 01110 10 11000 11011 10 rn:5 rd:5
 
 UADDLV A64_V 0 Q:1 1 01110 size:2 11000 00011 10 rn:5 rd:5 \
 !constraints { $size < 2 || ($size == 2 && $Q == 1); }
+# ReservedValue: break the constraint (size==2) => (Q=1)
+UADDLV_RES A64_V 0 0 1 01110 10 11000 00011 10 rn:5 rd:5
+
 UMAXV A64_V 0 Q:1 1 01110 size:2 11000 01010 10 rn:5 rd:5 \
 !constraints { $size < 2 || ($size == 2 && $Q == 1); }
+# ReservedValue: break the constraint (size==2) => (Q=1)
+UMAXV_RES A64_V 0 0 1 01110 10 11000 01010 10 rn:5 rd:5
+
 UMINV A64_V 0 Q:1 1 01110 size:2 11000 11010 10 rn:5 rd:5 \
 !constraints { $size < 2 || ($size == 2 && $Q == 1); }
+# ReservedValue: break the constraint (size==2) => (Q=1)
+UMINV_RES A64_V 0 0 1 01110 10 11000 11010 10 rn:5 rd:5
 
 FMAXNMV A64_V 0 1 1 01110 00 11000 01100 10 rn:5 rd:5
 FMAXV A64_V 0 1 1 01110 00 11000 01111 10 rn:5 rd:5
@@ -1765,18 +1989,42 @@ FMINV A64_V 0 1 1 01110 10 11000 01111 10 rn:5 rd:5
 
 DUPe A64_V 0 Q:1 0 01110000 imm:5 0 0000 1 rn:5 rd:5 \
 !constraints { ($imm & 0x07) || (($imm & 0x0f) && $Q == 1); }
+# ReservedValue: break the constraint (imm & 0x0f) => (Q == 1)
+DUPe_RES1 A64_V 0 0 0 01110000 imm:1 1000 0 0000 1 rn:5 rd:5
+# ReservedValue: break the constraint ((imm & 0x0f) != 0)
+DUPe_RES2 A64_V 0 Q:1 0 01110000 imm:1 0000 0 0000 1 rn:5 rd:5
+
 DUP A64_V 0 Q:1 0 01110000 imm:5 0 0001 1 rn:5 rd:5 \
 !constraints { ($imm & 0x07) || (($imm & 0x0f) && $Q == 1); }
+# ReservedValue: break the constraint (imm & 0x0f) => (Q == 1)
+DUP_RES1 A64_V 0 0 0 01110000 imm:1 1000 0 0001 1 rn:5 rd:5
+# ReservedValue: break the constraint ((imm & 0x0f) != 0)
+DUP_RES2 A64_V 0 Q:1 0 01110000 imm:1 0000 0 0001 1 rn:5 rd:5
 
 SMOV A64_V 0 Q:1 0 01110000 imm:5 0 0101 1 rn:5 rd:5 \
 !constraints { ($imm & 0x03) || (($imm & 0x07) && $Q == 1); }
+# ReservedValue: break the constraint (imm & 0x07) => (Q == 1)
+SMOV_RES1 A64_V 0 0 0 01110000 imm:2 100 0 0101 1 rn:5 rd:5
+# ReservedValue: break the constraint ((imm & 0x07) != 0)
+SMOV_RES2 A64_V 0 Q:1 0 01110000 imm:2 000 0 0101 1 rn:5 rd:5
+
 UMOV A64_V 0 Q:1 0 01110000 imm:5 0 0111 1 rn:5 rd:5 \
-!constraints { ($Q == 0 && ($imm & 0x07)) || ($Q == 1 && ($imm & 0x0f == 0x80)); }
+!constraints { ($Q == 0 && ($imm & 0x07)) || ($Q == 1 && (($imm & 0x0f) == 0x80)); }
+# ReservedValue: break the constraint ($Q == 0) => ($imm & 0x07)
+UMOV_RES1 A64_V 0 0 0 01110000 imm:2 000 0 0111 1 rn:5 rd:5
+# ReservedValue: break the constraint ($Q == 1) => (($imm & 0x0f) == 0x80)
+UMOV_RES2 A64_V 0 1 0 01110000 imm:5 0 0111 1 rn:5 rd:5 \
+!constraints { ($imm & 0x0f) != 0x80; }
 
 INS A64_V 0 1 0 01110000 imm:5 0 0011 1 rn:5 rd:5 \
 !constraints { ($imm & 0x0f); }
+# ReservedValue: break the constraint ($imm & 0x0f)
+INS_RES A64_V 0 1 0 01110000 imm:1 0000 0 0011 1 rn:5 rd:5
+
 INSe A64_V 0 1 1 01110000 imm:5 0 immm:4 1 rn:5 rd:5 \
 !constraints { ($imm & 0x0f); }
+# ReservedValue: break the constraint ($imm & 0x0f)
+INSe_RES A64_V 0 1 1 01110000 imm:1 0000 0 immm:4 1 rn:5 rd:5
 
 # C3.6.6 AdvSIMD modified immediate
 # 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16  15     12  11 10 9 8 7 6 5 4  0
