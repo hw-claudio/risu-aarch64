@@ -330,6 +330,7 @@ sub aarch64_limm($$)
 sub write_random_fpreg_var($)
 {
     my ($precision) = @_;
+    my $randomize_low = 0;
 
     if ($precision != 1 && $precision != 2 && $precision != 4) {
 	die "write_random_fpreg: invalid precision.\n";
@@ -344,7 +345,7 @@ sub write_random_fpreg_var($)
     } elsif ($r < 10) {
         # NaN (5%)
         # (plus a tiny chance of generating +-Inf)
-        $low = rand(0xffffffff);
+	$randomize_low = 1;
         $high = rand(0xffffffff) | 0x7ff00000;
     } elsif ($r < 15) {
         # Infinity (5%)
@@ -354,16 +355,19 @@ sub write_random_fpreg_var($)
     } elsif ($r < 30) {
         # Denormalized number (15%)
         # (plus tiny chance of +-0)
-        $low = rand(0xffffffff);
+	$randomize_low = 1;
         $high = rand(0xffffffff) & ~0x7ff00000;
     } else {
         # Normalized number (70%)
         # (plus a small chance of the other cases)
-        $low = rand(0xffffffff);
+	$randomize_low = 1;
         $high = rand(0xffffffff);
     }
 
     for (my $i = 1; $i < $precision; $i++) {
+	if ($randomize_low) {
+	    $low = rand(0xffffffff);
+	}
 	insn32($low);
     }
     insn32($high);
