@@ -2169,3 +2169,39 @@ FMOVi A64_V 00011110 type:2 1 imm:8 100 00000 rd:5 \
 !constraints { $type < 2; }
 # UnallocatedEncoding: type >= 2
 FMOVi_RES A64_V 00011110 1 type:1 1 imm:8 100 00000 rd:5
+
+# C3.6.29 Floating-point<->fixed-point conversions
+# 31 30 29 28 27 26 25 24 23 22 21 20 19  18  16  15     10 9  5 4  0
+# sf  0  S  1  1  1  1  0 type   0 rmode  opcode    scale    Rn   Rd
+
+# SCVTF (scalar, fixed point)
+SCVTFsf A64_V sf:1 0011110 type:2 0 00 010 scale:6 rn:5 rd:5 \
+!constraints { $type < 2 && !($sf == 0 && $scale < 0x20); }
+# UnallocatedEncoding: type >= 2
+SCVTFsf_RES1 A64_V sf:1 0011110 1 type:1 0 00 010 scale:6 rn:5 rd:5
+# UnallocatedEncoding: sf == 0 && $scale < 0x20
+SCVTFsf_RES2 A64_V 0 0011110 type:2 0 00 010 0 scale:5 rn:5 rd:5
+
+# UCVTF (scalar, fixed point)
+UCVTFsf A64_V sf:1 0011110 type:2 0 00 011 scale:6 rn:5 rd:5 \
+!constraints { $type < 2 && !($sf == 0 && $scale < 0x20); }
+# UnallocatedEncoding: type >= 2
+UCVTFsf_RES1 A64_V sf:1 0011110 1 type:1 0 00 011 scale:6 rn:5 rd:5
+# UnallocatedEncoding: sf == 0 && $scale < 0x20
+UCVTFsf_RES2 A64_V 0 0011110 type:2 0 00 011 0 scale:5 rn:5 rd:5
+
+# FCVTZS (scalar, fixed point)
+FCVTZSsf A64_V sf:1 0011110 type:2 0 11 000 scale:6 rn:5 rd:5 \
+!constraints { $type < 2 && !($sf == 0 && $scale < 0x20); }
+# UnallocatedEncoding: type >= 2
+FCVTZSsf_RES1 A64_V sf:1 0011110 1 type:1 0 11 000 scale:6 rn:5 rd:5
+# UnallocatedEncoding: sf == 0 && $scale < 0x20
+FCVTZSsf_RES2 A64_V 0 0011110 1 type:1 0 11 000 0 scale:5 rn:5 rd:5
+
+# FCVTZU (scalar, fixed point)
+FCVTZUsf A64_V sf:1 0011110 type:2 0 11 001 scale:6 rn:5 rd:5 \
+!constraints { $type < 2 && !($sf == 0 && $scale < 0x20); }
+# UnallocatedEncoding: type >= 2
+FCVTZUsf_RES1 A64_V sf:1 0011110 1 type:1 0 11 001 scale:6 rn:5 rd:5
+# UnallocatedEncoding: sf == 0 && $scale < 0x20
+FCVTZUsf_RES2 A64_V 0 0011110 1 type:1 0 11 001 0 scale:5 rn:5 rd:5
