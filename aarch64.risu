@@ -2078,3 +2078,61 @@ FRINT A64_V 00011110 type:2 1 001 mode:3 10000 rn:5 rd:5 \
 FRINT_RES1 A64_V 00011110 1 type:1 1 001 mode:3 10000 rn:5 rd:5
 # UnallocatedEncoding: rounding mode == 5
 FRINT_RES2 A64_V 00011110 type:2 1 001 101 10000 rn:5 rd:5
+
+# C3.6.26 Floating-point data-processing (2 source)
+# 31 30 29 28 27 26 25 24 23 22 21 20    16 15      12 11 10 9  5 4  0
+#  M  0  S  1  1  1  1  0  type  1    Rm      opcode    1  0  Rn   Rd
+
+# FMUL (scalar)
+FMUL A64_V 00011110 type:2 1 rm:5 0000 10 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FMUL_RES A64_V 00011110 1 type:1 1 rm:5 0000 10 rn:5 rd:5
+
+# FDIV (scalar)
+FDIV A64_V 00011110 type:2 1 rm:5 0001 10 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FDIV_RES A64_V 00011110 1 type:1 1 rm:5 0001 10 rn:5 rd:5
+
+# FADD (scalar)
+FADD A64_V 00011110 type:2 1 rm:5 0010 10 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FADD_RES A64_V 00011110 1 type:1 1 rm:5 0010 10 rn:5 rd:5
+
+# FSUB (scalar)
+FSUB A64_V 00011110 type:2 1 rm:5 0011 10 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FSUB_RES A64_V 00011110 1 type:1 1 rm:5 0011 10 rn:5 rd:5
+
+# FMAX (scalar)
+FMAX A64_V 00011110 type:2 1 rm:5 0100 10 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FMAX_RES A64_V 00011110 1 type:1 1 rm:5 0100 10 rn:5 rd:5
+
+# FMIN (scalar)
+FMIN A64_V 00011110 type:2 1 rm:5 0101 10 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FMIN_RES A64_V 00011110 1 type:1 1 rm:5 0101 10 rn:5 rd:5
+
+# FMAXNM (scalar)
+FMAXNM A64_V 00011110 type:2 1 rm:5 0110 10 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FMAXNM_RES A64_V 00011110 1 type:1 1 rm:5 0110 10 rn:5 rd:5
+
+# FMINNM (scalar)
+FMINNM A64_V 00011110 type:2 1 rm:5 0111 10 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FMINNM_RES A64_V 00011110 1 type:1 1 rm:5 0111 10 rn:5 rd:5
+
+# FNMUL (scalar)
+FNMUL A64_V 00011110 type:2 1 rm:5 1000 10 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FNMUL_RES A64_V 00011110 1 type:1 1 rm:5 1000 10 rn:5 rd:5
