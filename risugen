@@ -20,6 +20,7 @@ use Data::Dumper;
 use Text::Balanced qw { extract_bracketed extract_multiple };
 
 my $periodic_reg_random = 1;
+my $enable_aarch64_ld1 = 0;
 
 my @insns;
 my %insn_details;
@@ -327,6 +328,53 @@ sub aarch64_limm($$)
     return ($r << 16) | (($m - 1) << 10);
 }
 
+# write random fp value of passed precision (1=single, 2=double, 4=quad)
+sub write_random_fpreg_var($)
+{
+    my ($precision) = @_;
+    my $randomize_low = 0;
+
+    if ($precision != 1 && $precision != 2 && $precision != 4) {
+	die "write_random_fpreg: invalid precision.\n";
+    }
+
+    my ($low, $high);
+    my $r = rand(100);
+    if ($r < 5) {
+        # +-0 (5%)
+        $low = $high = 0;
+        $high |= 0x80000000 if (rand() < 0.5);
+    } elsif ($r < 10) {
+        # NaN (5%)
+        # (plus a tiny chance of generating +-Inf)
+	$randomize_low = 1;
+        $high = rand(0xffffffff) | 0x7ff00000;
+    } elsif ($r < 15) {
+        # Infinity (5%)
+        $low = 0;
+        $high = 0x7ff00000;
+        $high |= 0x80000000 if (rand() < 0.5);
+    } elsif ($r < 30) {
+        # Denormalized number (15%)
+        # (plus tiny chance of +-0)
+	$randomize_low = 1;
+        $high = rand(0xffffffff) & ~0x7ff00000;
+    } else {
+        # Normalized number (70%)
+        # (plus a small chance of the other cases)
+	$randomize_low = 1;
+        $high = rand(0xffffffff);
+    }
+
+    for (my $i = 1; $i < $precision; $i++) {
+	if ($randomize_low) {
+	    $low = rand(0xffffffff);
+	}
+	insn32($low);
+    }
+    insn32($high);
+}
+
 sub write_random_double_fpreg()
 {
     my ($low, $high);
@@ -388,7 +436,7 @@ sub write_random_single_fpreg()
     insn32($value);
 }
 
-sub write_random_fpreg()
+sub write_random_arm_fpreg()
 {
     # Write out 64 bits of random data intended to
     # initialise an FP register.
@@ -397,10 +445,10 @@ sub write_random_fpreg()
     # NaN, -0.0, and so on, which would be unlikely
     # to occur if we simply picked 64 random bits.
     if (rand() < 0.5) {
-        write_random_double_fpreg();
+        write_random_fpreg_var(2); # double
     } else {
-        write_random_single_fpreg();
-        write_random_single_fpreg();
+        write_random_fpreg_var(1); # single
+        write_random_fpreg_var(1); # single
     }
 }
 
@@ -428,7 +476,7 @@ sub write_random_arm_regdata($)
     $datalen += (32 * $vfp);
     insn32(0xea000000 + ($datalen-1));    # b next
     for (0..(($vfp * 16) - 1)) { # NB: never done for $vfp == 0
-        write_random_fpreg();
+        write_random_arm_fpreg();
     }
     #  .word [14 words of data for r0..r12,r14]
     for (0..13) {
@@ -454,11 +502,19 @@ sub write_random_aarch64_fpdata()
     };
 
     for (my $rt = 0; $rt <= 31; $rt++) {
-        for (0..3) { insn32(rand(0xffffffff)); } # random data
+	write_random_fpreg_var(4); # quad
     }
 
-    for (my $rt = 0; $rt <= 31; $rt += 4) {
-        insn32(0x4cdf2c00 | $rt); # ld1 {v0.2d-v3.2d}, [x0], #64
+    if ($enable_aarch64_ld1) {
+	# enable only when we have ld1
+	for (my $rt = 0; $rt <= 31; $rt += 4) {
+	    insn32(0x4cdf2c00 | $rt); # ld1 {v0.2d-v3.2d}, [x0], #64
+	}
+    } else {
+	# temporarily use LDP instead
+	for (my $rt = 0; $rt <= 31; $rt += 2) {
+	    insn32(0xacc10000 | ($rt + 1) << 10 | ($rt)); # ldp q0,q1,[x0],#32
+	}
     }
 }
 
