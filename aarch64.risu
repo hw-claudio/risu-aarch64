@@ -2205,3 +2205,87 @@ FCVTZUsf A64_V sf:1 0011110 type:2 0 11 001 scale:6 rn:5 rd:5 \
 FCVTZUsf_RES1 A64_V sf:1 0011110 1 type:1 0 11 001 scale:6 rn:5 rd:5
 # UnallocatedEncoding: sf == 0 && $scale < 0x20
 FCVTZUsf_RES2 A64_V 0 0011110 1 type:1 0 11 001 0 scale:5 rn:5 rd:5
+
+# C3.6.30 Floating-point<->integer conversions
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18    16 15 14 13 12 11 10  9  5  4  0
+# sf  0  S  1  1  1  1  0  type  1 rmode  opcode   0  0  0  0  0  0   Rn    Rd
+
+# FCVTNS (scalar)
+FCVTNS A64_V sf:1 0011110 type:2 1 00 000 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FCVTNS_RES A64_V sf:1 0011110 1 type:1 1 00 000 000000 rn:5 rd:5
+
+# FCVTNU (scalar)
+FCVTNU A64_V sf:1 0011110 type:2 1 00 001 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FCVTNU_RES A64_V sf:1 0011110 1 type:1 1 00 001 000000 rn:5 rd:5
+
+# SCVTF (scalar, integer)
+SCVTFsi A64_V sf:1 0011110 type:2 1 00 010 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+SCVTFsi_RES A64_V sf:1 0011110 1 type:1 1 00 010 000000 rn:5 rd:5
+
+# UCVTF (scalar, integer)
+UCVTFsi A64_V sf:1 0011110 type:2 1 00 011 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+UCVTFsi_RES A64_V sf:1 0011110 1 type:1 1 00 011 000000 rn:5 rd:5
+
+# FCVTAS (scalar)
+FCVTAS A64_V sf:1 0011110 type:2 1 00 100 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FCVTAS_RES A64_V sf:1 0011110 1 type:1 1 00 100 000000 rn:5 rd:5
+
+# FCVTAU (scalar)
+FCVTAU A64_V sf:1 0011110 type:2 1 00 101 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FCVTAU_RES A64_V sf:1 0011110 1 type:1 1 00 101 000000 rn:5 rd:5
+
+# FMOV to/from general purpose registers
+FMOVgp A64_V sf:1 0011110 type:2 1 rmode:2 11 op:1 000000 rn:5 rd:5 \
+!constraints { ($rmode == 0 && $sf == $type) || ($rmode == 1 && $sf == 1 && $type == 2); }
+
+# UnallocatedEncoding: negate constraint
+FMOVgp_RES A64_V sf:1 0011110 type:2 1 rmode:2 11 op:1 000000 rn:5 rd:5 \
+!constraints { !(($rmode == 0 && $sf == $type) || ($rmode == 1 && $sf == 1 && $type == 2)); }
+
+# FCVTPS (scalar)
+FCVTPS A64_V sf:1 0011110 type:2 1 01 000 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FCVTPS_RES A64_V sf:1 0011110 1 type:1 1 01 000 000000 rn:5 rd:5
+
+# FCVTPU (scalar)
+FCVTPU A64_V sf:1 0011110 type:2 1 01 001 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FCVTPU_RES A64_V sf:1 0011110 1 type:1 1 01 001 000000 rn:5 rd:5
+
+# FCVTMS (scalar)
+FCVTMS A64_V sf:1 0011110 type:2 1 10 000 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FCVTMS_RES A64_V sf:1 0011110 1 type:1 1 10 000 000000 rn:5 rd:5
+
+# FCVTMU (scalar)
+FCVTMU A64_V sf:1 0011110 type:2 1 10 001 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FCVTMU_RES A64_V sf:1 0011110 1 type:1 1 10 001 000000 rn:5 rd:5
+
+# FCVTZS (scalar, integer)
+FCVTZSsi A64_V sf:1 0011110 type:2 1 11 000 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FCVTZSsi_RES A64_V sf:1 0011110 1 type:1 1 11 000 000000 rn:5 rd:5
+
+# FCVTZU (scalar, integer)
+FCVTZUsi A64_V sf:1 0011110 type:2 1 11 001 000000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FCVTZUsi_RES A64_V sf:1 0011110 1 type:1 1 11 001 000000 rn:5 rd:5
