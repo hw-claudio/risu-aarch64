@@ -2031,3 +2031,50 @@ INSe_RES A64_V 0 1 1 01110000 imm:1 0000 0 immm:4 1 rn:5 rd:5
 #  0  Q op  0  1  1  1  1  0  0  0  0  0  a  b  c [  cmode  ] o2  1 d e f g h  Rd
 
 # NIY
+
+# C3.6.25 Floating-point data-processing (1 source)
+# 31 30 29 28 27 26 25 24 |23 22| 21 20        15 14 13 12 11 10 9  5 4  0
+#  M  0  S  1  1  1  1  0 |type |  1    opcode     1  0  0  0  0  Rn   Rd
+
+# FMOV (register) opc = 0
+FMOV A64_V 00011110 type:2 1 0000 00 10000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FMOV_RES A64_V 00011110 1 type:1 1 0000 00 10000 rn:5 rd:5
+
+# FABS (scalar) opc = 1
+FABS A64_V 00011110 type:2 1 0000 01 10000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FABS_RES A64_V 00011110 1 type:1 1 0000 01 10000 rn:5 rd:5
+
+# FNEG (scalar) opc = 2
+FNEG A64_V 00011110 type:2 1 0000 10 10000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FNEG_RES A64_V 00011110 1 type:1 1 0000 10 10000 rn:5 rd:5
+
+# FSQRT (scalar) opc = 3
+FSQRT A64_V 00011110 type:2 1 0000 11 10000 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FSQRT_RES A64_V 00011110 1 type:1 1 0000 11 10000 rn:5 rd:5
+
+# FCVT (all forms) - NB: conversion with src = dst is not allowed
+FCVT A64_V 00011110 type:2 1 0001 opc:2 10000 rn:5 rd:5 \
+!constraints { $type != 2 && $opc != 2 && $type != $opc; }
+# UnallocatedEncoding: type == 2
+FCVT_RES1 A64_V 00011110 10 1 0001 opc:2 10000 rn:5 rd:5
+# UnallocatedEncoding: opc == 2
+FCVT_RES2 A64_V 00011110 type:2 1 0001 10 10000 rn:5 rd:5
+# UnallocatedEncoding: type == opc
+FCVT_RES3 A64_V 00011110 type:2 1 0001 opc:2 10000 rn:5 rd:5 \
+!constraints { $type == $opc; }
+
+# FRINT (scalar), all rounding modes
+FRINT A64_V 00011110 type:2 1 001 mode:3 10000 rn:5 rd:5 \
+!constraints { $type < 2 && $mode != 5; }
+# UnallocatedEncoding: type >= 2
+FRINT_RES1 A64_V 00011110 1 type:1 1 001 mode:3 10000 rn:5 rd:5
+# UnallocatedEncoding: rounding mode == 5
+FRINT_RES2 A64_V 00011110 type:2 1 001 101 10000 rn:5 rd:5
