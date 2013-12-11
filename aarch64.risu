@@ -2136,3 +2136,27 @@ FNMUL A64_V 00011110 type:2 1 rm:5 1000 10 rn:5 rd:5 \
 !constraints { $type < 2; }
 # UnallocatedEncoding: type >= 2
 FNMUL_RES A64_V 00011110 1 type:1 1 rm:5 1000 10 rn:5 rd:5
+
+# C3.6.27 Floating-point data-processing (3 source)
+# 31 30 29 28 27 26 25 24 23 22 21 20  16 15 14  10 9  5 4  0
+#  M  0  S  1  1  1  1  1 type  o1   Rm   o0   Ra    Rn   Rd
+
+FMADD A64_V 00011111 type:2 0 rm:5 0 ra:5 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FMADD_RES A64_V 00011111 1 type:1 0 rm:5 0 ra:5 rn:5 rd:5
+
+FMSUB A64_V 00011111 type:2 0 rm:5 1 ra:5 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FMSUB_RES A64_V 00011111 1 type:1 0 rm:5 1 ra:5 rn:5 rd:5
+
+FNMADD A64_V 00011111 type:2 1 rm:5 0 ra:5 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FNMADD_RES A64_V 00011111 1 type:1 1 rm:5 0 ra:5 rn:5 rd:5
+
+FNMSUB A64_V 00011111 type:2 1 rm:5 1 ra:5 rn:5 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FNMSUB_RES A64_V 00011111 1 type:1 1 rm:5 1 ra:5 rn:5 rd:5
