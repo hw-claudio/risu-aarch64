@@ -2160,3 +2160,12 @@ FNMSUB A64_V 00011111 type:2 1 rm:5 1 ra:5 rn:5 rd:5 \
 !constraints { $type < 2; }
 # UnallocatedEncoding: type >= 2
 FNMSUB_RES A64_V 00011111 1 type:1 1 rm:5 1 ra:5 rn:5 rd:5
+
+# C3.6.28 Floating-point immediate
+# 31 30 29 28 27 26 25 24 23 22 21 20    13 12 11 10 9    5 4    0
+#  M  0  S  1  1  1  1  0 type   1   imm8    1  0  0  imm5    Rd
+
+FMOVi A64_V 00011110 type:2 1 imm:8 100 00000 rd:5 \
+!constraints { $type < 2; }
+# UnallocatedEncoding: type >= 2
+FMOVi_RES A64_V 00011110 1 type:1 1 imm:8 100 00000 rd:5
