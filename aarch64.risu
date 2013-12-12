@@ -2027,10 +2027,35 @@ INSe A64_V 0 1 1 01110000 imm:5 0 immm:4 1 rn:5 rd:5 \
 INSe_RES A64_V 0 1 1 01110000 imm:1 0000 0 immm:4 1 rn:5 rd:5
 
 # C3.6.6 AdvSIMD modified immediate
-# 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16  15     12  11 10 9 8 7 6 5 4  0
-#  0  Q op  0  1  1  1  1  0  0  0  0  0  a  b  c [  cmode  ] o2  1 d e f g h  Rd
+# 31 30 29 28 27 26 25 24 23 22 21 20 19 18   16 15   12 11 10  9   5 4  0
+#  0  Q op  0  1  1  1  1  0  0  0  0  0 [ abc ] [cmode] o2  1 [defgh] Rd
+#                                                       [ 0]
+# C6.3.179 MOVI move immediate (vector)
+MOVI A64_V 0 Q:1 op:1 0111100000 abc:3 cm:4 01 defgh:5 rd:5 \
+!constraints { \
+($op == 0 && $cm != 1 && $cm != 3 && $cm != 5 && $cm != 7 && $cm != 9 && $cm != 11 && $cm != 15) \
+|| ($op == 1 && $cm == 14); \
+}
 
-# NIY
+# C6.3.183 MVNI move inverted immediate (vector)
+MVNI A64_V 0 Q:1 1 0111100000 abc:3 cm:4 01 defgh:5 rd:5 \
+!constraints { \
+($cm == 2 || $cm == 4 || $cm == 6 || $cm == 8 || $cm == 10 || $cm == 12 || $cm == 13); \
+}
+
+#C6.3.187 ORR (vector, immediate)
+ORRiv A64_V 0 Q:1 0 0111100000 abc:3 cmode:3 1 01 defgh:5 rd:5 \
+!constraints { $cmode <= 5; }
+
+# C6.3.112 FMOV (vector, immediate)
+FMOViv A64_V 0 Q:1 op:1 0111100000 abc:3 1111 01 defgh:5 rd:5 \
+!constraints { $op == 0 || $Q == 1; }
+
+# UnallocatedEncoding() op==1 with Q==0
+FMOViv_RES A64_V 0 0 1 0111100000 abc:3 1111 01 defgh:5 rd:5
+
+BICiv A64_V 0 Q:1 1 0111100000 abc:3 cm:4 01 defgh:5 rd:5 \
+!constraints { $cm <= 11 && ($cm % 2) == 1; }
 
 # C3.6.25 Floating-point data-processing (1 source)
 # 31 30 29 28 27 26 25 24 |23 22| 21 20        15 14 13 12 11 10 9  5 4  0
