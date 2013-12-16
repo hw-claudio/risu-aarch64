@@ -1584,66 +1584,74 @@ EXTR A64 1 00 100111 1 0 rm:5 imms:6 rn:5 rd:5
 ANDi A64 sf:1 00 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($rn != 31 && $rd != 31) && \
-    (($sf == 0 && $sn == 0 && $imms < 0x1f) || \
-     ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
+    ($sf == 1 || $sn == 0) && \
+    (($sn == 0 && $imms <= 0x3c && $imms != 0x3b && $imms != 0x37 && $imms != 0x2f && $imms != 0x1f) || ($sn == 1 && $imms != 0x3f)); \
 }
 
-# ReservedValue: break the constraint ($sf == $sn)
-ANDi_RES1 A64 sf:1 00 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
-!constraints { $sf != $sn; }
-# ReservedValue: break the (imms < 0x1f) constraint
-ANDi_RES2 A64 0 00 100100 0 immr:6 imms:6 rn:5 rd:5 \
-!constraints { $imms >= 0x1f; }
-# ReservedValue: break the (imms < 0x3f) constraint
-ANDi_RES3 A64 1 00 100100 1 immr:6 111111 rn:5 rd:5
+# ReservedValue: break the constraint ($sf==0 => $sn==0)
+ANDi_RES1 A64 0 00 100100 1 immr:6 imms:6 rn:5 rd:5
+# ReservedValue: break the imms constraints
+ANDi_RES2 A64 0 00 100100 0 immr:6 111110 rn:5 rd:5
+ANDi_RES3 A64 0 00 100100 0 immr:6 111101 rn:5 rd:5
+ANDi_RES4 A64 0 00 100100 0 immr:6 111011 rn:5 rd:5
+ANDi_RES5 A64 0 00 100100 0 immr:6 110111 rn:5 rd:5
+ANDi_RES6 A64 0 00 100100 0 immr:6 101111 rn:5 rd:5
+ANDi_RES7 A64 0 00 100100 0 immr:6 011111 rn:5 rd:5
+ANDi_RES8 A64 sf:1 00 100100 sn:1 immr:6 111111 rn:5 rd:5
 
-ORRi A64 sf:1 01 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
+ORRi A64 sf:1 00 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($rn != 31 && $rd != 31) && \
-    (($sf == 0 && $sn == 0 && $imms < 0x1f) || \
-     ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
+    ($sf == 1 || $sn == 0) && \
+    (($sn == 0 && $imms <= 0x3c && $imms != 0x3b && $imms != 0x37 && $imms != 0x2f && $imms != 0x1f) || ($sn == 1 && $imms != 0x3f)); \
 }
 
-# ReservedValue: break the constraint ($sf == $sn)
-ORRi_RES1 A64 sf:1 01 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
-!constraints { $sf != $sn; }
-# ReservedValue: break the (imms < 0x1f) constraint
-ORRi_RES2 A64 0 01 100100 0 immr:6 imms:6 rn:5 rd:5 \
-!constraints { $imms >= 0x1f; }
-# ReservedValue: break the (imms < 0x3f) constraint
-ORRi_RES3 A64 1 01 100100 1 immr:6 111111 rn:5 rd:5
+# ReservedValue: break the constraint ($sf==0 => $sn==0)
+ORRi_RES1 A64 0 01 100100 1 immr:6 imms:6 rn:5 rd:5
+# ReservedValue: break the imms constraints
+ORRi_RES2 A64 0 01 100100 0 immr:6 111110 rn:5 rd:5
+ORRi_RES3 A64 0 01 100100 0 immr:6 111101 rn:5 rd:5
+ORRi_RES4 A64 0 01 100100 0 immr:6 111011 rn:5 rd:5
+ORRi_RES5 A64 0 01 100100 0 immr:6 110111 rn:5 rd:5
+ORRi_RES6 A64 0 01 100100 0 immr:6 101111 rn:5 rd:5
+ORRi_RES7 A64 0 01 100100 0 immr:6 011111 rn:5 rd:5
+ORRi_RES8 A64 sf:1 01 100100 sn:1 immr:6 111111 rn:5 rd:5
 
 EORi A64 sf:1 10 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($rn != 31 && $rd != 31) && \
-    (($sf == 0 && $sn == 0 && $imms < 0x1f) || \
-     ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
+    ($sf == 1 || $sn == 0) && \
+    (($sn == 0 && $imms <= 0x3c && $imms != 0x3b && $imms != 0x37 && $imms != 0x2f && $imms != 0x1f) || ($sn == 1 && $imms != 0x3f)); \
 }
 
-# ReservedValue: break the constraint ($sf == $sn)
-EORi_RES1 A64 sf:1 10 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
-!constraints { $sf != $sn; }
-# ReservedValue: break the (imms < 0x1f) constraint
-EORi_RES2 A64 0 10 100100 0 immr:6 imms:6 rn:5 rd:5 \
-!constraints { $imms >= 0x1f; }
-# ReservedValue: break the (imms < 0x3f) constraint
-EORi_RES3 A64 1 10 100100 1 immr:6 111111 rn:5 rd:5
+# ReservedValue: break the constraint ($sf==0 => $sn==0)
+EORi_RES1 A64 0 10 100100 1 immr:6 imms:6 rn:5 rd:5
+# ReservedValue: break the imms constraints
+EORi_RES2 A64 0 10 100100 0 immr:6 111110 rn:5 rd:5
+EORi_RES3 A64 0 10 100100 0 immr:6 111101 rn:5 rd:5
+EORi_RES4 A64 0 10 100100 0 immr:6 111011 rn:5 rd:5
+EORi_RES5 A64 0 10 100100 0 immr:6 110111 rn:5 rd:5
+EORi_RES6 A64 0 10 100100 0 immr:6 101111 rn:5 rd:5
+EORi_RES7 A64 0 10 100100 0 immr:6 011111 rn:5 rd:5
+EORi_RES8 A64 sf:1 10 100100 sn:1 immr:6 111111 rn:5 rd:5
 
 ANDSi A64 sf:1 11 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($rn != 31 && $rd != 31) && \
-    (($sf == 0 && $sn == 0 && $imms < 0x1f) || \
-     ($sf == 1 && $sn == 1 && $imms < 0x3f)); \
+    ($sf == 1 || $sn == 0) && \
+    (($sn == 0 && $imms <= 0x3c && $imms != 0x3b && $imms != 0x37 && $imms != 0x2f && $imms != 0x1f) || ($sn == 1 && $imms != 0x3f)); \
 }
 
-# ReservedValue: break the constraint ($sf == $sn)
-ANDSi_RES1 A64 sf:1 11 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
-!constraints { $sf != $sn; }
-# ReservedValue: break the (imms < 0x1f) constraint
-ANDSi_RES2 A64 0 11 100100 0 immr:6 imms:6 rn:5 rd:5 \
-!constraints { $imms >= 0x1f; }
-# ReservedValue: break the (imms < 0x3f) constraint
-ANDSi_RES3 A64 0 11 100100 0 immr:6 111111 rn:5 rd:5
+# ReservedValue: break the constraint ($sf==0 => $sn==0)
+ANDSi_RES1 A64 0 11 100100 1 immr:6 imms:6 rn:5 rd:5
+# ReservedValue: break the imms constraints
+ANDSi_RES2 A64 0 11 100100 0 immr:6 111110 rn:5 rd:5
+ANDSi_RES3 A64 0 11 100100 0 immr:6 111101 rn:5 rd:5
+ANDSi_RES4 A64 0 11 100100 0 immr:6 111011 rn:5 rd:5
+ANDSi_RES5 A64 0 11 100100 0 immr:6 110111 rn:5 rd:5
+ANDSi_RES6 A64 0 11 100100 0 immr:6 101111 rn:5 rd:5
+ANDSi_RES7 A64 0 11 100100 0 immr:6 011111 rn:5 rd:5
+ANDSi_RES8 A64 sf:1 11 100100 sn:1 immr:6 111111 rn:5 rd:5
 
 # C3.4.5 Move wide (immediate)
 # 31 |30 29| 28 27 26 25 24 23 | 22 21 | 20       5 4    0
