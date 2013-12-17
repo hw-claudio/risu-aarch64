@@ -2081,12 +2081,26 @@ FCMPEZD A64_V 000 11110 01 1 rm:5 00 1000 rn:5 11 000
 
 # Unallocated Encodings and ReservedValues
 FCMP_RES1 A64_V mos:3 11110 0 type:1 1 rm:5 00 1000 rn:5 opc:2 000 \
-!constraints { $mos != 0; }
+!constraints { $mos != 0 && !($mos & 2); }
 FCMP_RES2 A64_V 000 11110 1 type:1 1 rm:5 00 1000 rn:5 opc:2 000
 FCMP_RES3 A64_V 000 11110 0 type:1 1 rm:5 op:2 1000 rn:5 opc:2 000 \
 !constraints { $op != 0; }
 FCMP_RES4 A64_V 000 11110 0 type:1 1 rm:5 00 1000 rn:5 opc:2 op2r:3 \
 !constraints { $op2r != 0; }
+
+# C3.6.23 Floating-point conditional compare
+# 31 30 29 28 27 26 25 24 23 22 21 20  16 15   12 11 10 9  5  4  3    0
+#  M  0  S  1  1  1  1  0  type  1   Rm    cond    0  1  Rn  op   nzcv
+
+FCCMPS A64_V 000 11110 00 1 rm:5 cond:4 01 rn:5 0 nzcv:4
+FCCMPES A64_V 000 11110 00 1 rm:5 cond:4 01 rn:5 1 nzcv:4
+
+FCCMPD A64_V 000 11110 01 1 rm:5 cond:4 01 rn:5 0 nzcv:4
+FCCMPED A64_V 000 11110 01 1 rm:5 cond:4 01 rn:5 1 nzcv:4
+
+FCCMP_RES1 A64_V mos:3 11110 0 type:1 1 rm:5 cond:4 01 rn:5 op:1 nzcv:4 \
+!constraints { $mos != 0 && !($mos & 2); }
+FCCMP_RES2 A64_V 000 11110 1 type:1 1 rm:5 cond:4 01 rn:5 op:1 nzcv:4
 
 # C3.6.25 Floating-point data-processing (1 source)
 # 31 30 29 28 27 26 25 24 |23 22| 21 20        15 14 13 12 11 10 9  5 4  0
