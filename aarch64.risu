@@ -2065,6 +2065,29 @@ FMOViv_RES A64_V 0 0 1 0111100000 abc:3 1111 01 defgh:5 rd:5
 BICiv A64_V 0 Q:1 1 0111100000 abc:3 cm:4 01 defgh:5 rd:5 \
 !constraints { $cm <= 11 && ($cm % 2) == 1; }
 
+# C3.6.22 Floating-point compare
+# 31 30 29 28 27 26 25 24 23 22 21 20  16 15 14 13 12 11 10 9    5 4       0
+#  M  0  S  1  1  1  1  0  type  1   Rm    op    1  0  0  0   Rn    opcode2
+
+FCMPS A64_V 000 11110 00 1 rm:5 00 1000 rn:5 00 000
+FCMPZS A64_V 000 11110 00 1 rm:5 00 1000 rn:5 01 000
+FCMPES A64_V 000 11110 00 1 rm:5 00 1000 rn:5 10 000
+FCMPEZS A64_V 000 11110 00 1 rm:5 00 1000 rn:5 11 000
+
+FCMPD A64_V 000 11110 01 1 rm:5 00 1000 rn:5 00 000
+FCMPZD A64_V 000 11110 01 1 rm:5 00 1000 rn:5 01 000
+FCMPED A64_V 000 11110 01 1 rm:5 00 1000 rn:5 10 000
+FCMPEZD A64_V 000 11110 01 1 rm:5 00 1000 rn:5 11 000
+
+# Unallocated Encodings and ReservedValues
+FCMP_RES1 A64_V mos:3 11110 0 type:1 1 rm:5 00 1000 rn:5 opc:2 000 \
+!constraints { $mos != 0; }
+FCMP_RES2 A64_V 000 11110 1 type:1 1 rm:5 00 1000 rn:5 opc:2 000
+FCMP_RES3 A64_V 000 11110 0 type:1 1 rm:5 op:2 1000 rn:5 opc:2 000 \
+!constraints { $op != 0; }
+FCMP_RES4 A64_V 000 11110 0 type:1 1 rm:5 00 1000 rn:5 opc:2 op2r:3 \
+!constraints { $op2r != 0; }
+
 # C3.6.25 Floating-point data-processing (1 source)
 # 31 30 29 28 27 26 25 24 |23 22| 21 20        15 14 13 12 11 10 9  5 4  0
 #  M  0  S  1  1  1  1  0 |type |  1    opcode     1  0  0  0  0  Rn   Rd
