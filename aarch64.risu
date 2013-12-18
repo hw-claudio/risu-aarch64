@@ -2102,6 +2102,17 @@ FCCMP_RES1 A64_V mos:3 11110 0 type:1 1 rm:5 cond:4 01 rn:5 op:1 nzcv:4 \
 !constraints { $mos != 0 && !($mos & 2); }
 FCCMP_RES2 A64_V 000 11110 1 type:1 1 rm:5 cond:4 01 rn:5 op:1 nzcv:4
 
+# C3.6.24 Floating-point conditional select
+# 31 30 29 28 27 26 25 24 23 22 21 20    16 15    12 11 10 9    5 4    0
+#  M  0  S  1  1  1  1  0  type  1    Rm      cond    1  1   Rn     Rd
+
+FCSELS A64_V 000 11110 00 1 rm:5 cond:4 11 rn:5 rd:5
+FCSELD A64_V 000 11110 01 1 rm:5 cond:4 11 rn:5 rd:5
+
+FCSEL_RES1 A64_V mos:3 11110 0 type:1 1 rm:5 cond:4 11 rn:5 rd:5 \
+!constraints { $mos != 0 && !($mos & 2); }
+FCSEL_RES2 A64_V 000 11110 1 type:1 1 rm:5 cond:4 11 rn:5 rd:5
+
 # C3.6.25 Floating-point data-processing (1 source)
 # 31 30 29 28 27 26 25 24 |23 22| 21 20        15 14 13 12 11 10 9  5 4  0
 #  M  0  S  1  1  1  1  0 |type |  1    opcode     1  0  0  0  0  Rn   Rd
