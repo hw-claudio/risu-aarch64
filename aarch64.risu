@@ -1599,7 +1599,7 @@ ANDi_RES6 A64 0 00 100100 0 immr:6 101111 rn:5 rd:5
 ANDi_RES7 A64 0 00 100100 0 immr:6 011111 rn:5 rd:5
 ANDi_RES8 A64 sf:1 00 100100 sn:1 immr:6 111111 rn:5 rd:5
 
-ORRi A64 sf:1 00 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
+ORRi A64 sf:1 01 100100 sn:1 immr:6 imms:6 rn:5 rd:5 \
 !constraints { \
     ($rn != 31 && $rd != 31) && \
     ($sf == 1 || $sn == 0) && \
